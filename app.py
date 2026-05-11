@@ -1,7 +1,7 @@
 import streamlit as st
 import pandas as pd
 import folium
-from streamlit_folium import st_folium  # Using the modern render engine
+from streamlit_folium import st_folium 
 import os
 
 # --- PAGE CONFIGURATION ---
@@ -25,14 +25,16 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
+# --- ENHANCED PATH LOGIC (Best Practice) ---
+# This finds exactly where your app.py is sitting
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
 # --- DATA LOADING LOGIC ---
 @st.cache_data
 def load_project_data():
-    # Ensuring paths are robust for any OS
-    #main_data_path = os.path.join("csv", "full_geotemporal_dataset.csv")
-    #geojson_path = os.path.join("csv", "ken_admin2.geojson")
-    main_data_path = "csv/full_geotemporal_dataset.csv" # Standard path
-    geojson_path = "csv/ken_admin2.geojson"
+    # Constructing absolute paths to reach inside the 'csv' folder
+    main_data_path = os.path.join(BASE_DIR, "csv", "full_geotemporal_dataset.csv")
+    geojson_path = os.path.join(BASE_DIR, "csv", "ken_admin2.geojson")
     
     if os.path.exists(main_data_path):
         df = pd.read_csv(main_data_path)
@@ -54,10 +56,13 @@ with st.sidebar:
         "Data Engineering Insights"
     ])
     st.divider()
+    
+    # Connection Status
     if not df.empty:
         st.success(f"✅ Data Loaded: {len(df):,} records")
     else:
-        st.error("❌ Data files not found in /csv")
+        st.error("❌ CSV Folder or Data not found.")
+        st.info(f"Checking in: {os.path.join(BASE_DIR, 'csv')}")
 
 # --- MAIN HEADER ---
 st.title("🇰🇪 K-CEWS: Kenya Cholera Early Warning System")
@@ -85,10 +90,10 @@ if app_mode == "Executive Summary":
         if not df.empty:
             st.dataframe(df.tail(10), use_container_width=True)
         else:
-            st.warning("Please ensure 'full_geotemporal_dataset.csv' is in the /csv folder.")
+            st.warning("Please verify data file location.")
             
     with col_right:
-        st.info("💡 **Lead's Strategic Note:** This MVP focuses on the intersection of NASA Precipitation lags and Socio-demographic vulnerability. Predictions refresh every 24 hours.")
+        st.info("💡 **Lead's Strategic Note:** This MVP focuses on the intersection of NASA Precipitation lags and Socio-demographic vulnerability.")
 
 # --- 2. REGIONAL RISK MAP MODE ---
 elif app_mode == "Regional Risk Map":
@@ -98,25 +103,26 @@ elif app_mode == "Regional Risk Map":
         # Coordinates centered on Kenya
         m = folium.Map(location=[0.0236, 37.9062], zoom_start=6, tiles="CartoDB positron")
         
-        # Adding the GeoJSON layer
-        # NOTE: Ensure your GeoJSON has the property 'ADM2_EN' for the tooltip to work!
-        folium.GeoJson(
-            geo_path,
-            name="Kenya Sub-Counties",
-            style_function=lambda x: {
-                "fillColor": "#005ea2",
-                "color": "black",
-                "weight": 0.5,
-                "fillOpacity": 0.1,
-            },
-            tooltip=folium.GeoJsonTooltip(fields=['ADM2_EN'], aliases=['Sub-County:'])
-        ).add_to(m)
-        
-        # Using st_folium for better compatibility with Streamlit 1.57.0+
-        st_folium(m, width=1100, height=600, returned_objects=[])
+        try:
+            # Adding the GeoJSON layer
+            folium.GeoJson(
+                geo_path,
+                name="Kenya Sub-Counties",
+                style_function=lambda x: {
+                    "fillColor": "#005ea2",
+                    "color": "black",
+                    "weight": 0.5,
+                    "fillOpacity": 0.1,
+                },
+                tooltip=folium.GeoJsonTooltip(fields=['ADM2_EN'], aliases=['Sub-County:'])
+            ).add_to(m)
+            
+            st_folium(m, width=1100, height=600, returned_objects=[])
+        except Exception as e:
+            st.error("The map engine failed to draw the boundaries.")
+            st.code(f"Error detail: {e}")
     else:
         st.error(f"GeoJSON file not found at: {geo_path}")
-        st.info("Technical Tip: Ensure the file 'ken_admin2.geojson' is inside the 'csv' folder.")
 
 # --- 3. DATA ENGINEERING INSIGHTS ---
 elif app_mode == "Data Engineering Insights":
