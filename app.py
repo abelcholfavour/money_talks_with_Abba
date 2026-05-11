@@ -25,23 +25,25 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- ENHANCED PATH LOGIC (Best Practice) ---
-# This finds exactly where your app.py is sitting
+# --- ENHANCED PATH LOGIC ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
-# --- DATA LOADING LOGIC ---
+# Let's be 100% explicit for your folder structure
+csv_folder = os.path.join(BASE_DIR, "csv")
+main_data_path = os.path.join(csv_folder, "full_geotemporal_dataset.csv")
+geojson_path = os.path.join(csv_folder, "ken_admin2.geojson")
+
 @st.cache_data
 def load_project_data():
-    # Constructing absolute paths to reach inside the 'csv' folder
-    main_data_path = os.path.join(BASE_DIR, "csv", "full_geotemporal_dataset.csv")
-    geojson_path = os.path.join(BASE_DIR, "csv", "ken_admin2.geojson")
+    # Diagnostic Print (This shows in your Terminal)
+    print(f"DEBUG: Searching for CSV at {main_data_path}")
     
     if os.path.exists(main_data_path):
-        df = pd.read_csv(main_data_path)
+        return pd.read_csv(main_data_path), geojson_path
     else:
-        df = pd.DataFrame()
-        
-    return df, geojson_path
+        # If it fails, let's create a tiny "fake" table so the app doesn't stay blank
+        dummy_df = pd.DataFrame({"Sub_County": ["Data Not Found"], "Risk": [0]})
+        return dummy_df, geojson_path
 
 df, geo_path = load_project_data()
 
@@ -96,33 +98,24 @@ if app_mode == "Executive Summary":
         st.info("💡 **Lead's Strategic Note:** This MVP focuses on the intersection of NASA Precipitation lags and Socio-demographic vulnerability.")
 
 # --- 2. REGIONAL RISK MAP MODE ---
+
 elif app_mode == "Regional Risk Map":
     st.header("📍 Geospatial Vulnerability Map")
     
+    # Let's force it to show something even if the file is missing for a second
     if os.path.exists(geo_path):
-        # Coordinates centered on Kenya
-        m = folium.Map(location=[0.0236, 37.9062], zoom_start=6, tiles="CartoDB positron")
+        m = folium.Map(location=[-1.286, 36.817], zoom_start=6, tiles="OpenStreetMap")
         
-        try:
-            # Adding the GeoJSON layer
-            folium.GeoJson(
-                geo_path,
-                name="Kenya Sub-Counties",
-                style_function=lambda x: {
-                    "fillColor": "#005ea2",
-                    "color": "black",
-                    "weight": 0.5,
-                    "fillOpacity": 0.1,
-                },
-                tooltip=folium.GeoJsonTooltip(fields=['ADM2_EN'], aliases=['Sub-County:'])
-            ).add_to(m)
-            
-            st_folium(m, width=1100, height=600, returned_objects=[])
-        except Exception as e:
-            st.error("The map engine failed to draw the boundaries.")
-            st.code(f"Error detail: {e}")
+        folium.GeoJson(
+            geo_path,
+            name="Kenya",
+            style_function=lambda x: {"fillColor": "#005ea2", "color": "black", "weight": 1}
+        ).add_to(m)
+        
+        # Use a fixed pixel height to force it to appear
+        st_folium(m, height=500, width=800, returned_objects=[])
     else:
-        st.error(f"GeoJSON file not found at: {geo_path}")
+        st.error(f"Map File Not Found! Check this path: {geo_path}")
 
 # --- 3. DATA ENGINEERING INSIGHTS ---
 elif app_mode == "Data Engineering Insights":
