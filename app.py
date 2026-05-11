@@ -29,8 +29,10 @@ st.markdown("""
 @st.cache_data
 def load_project_data():
     # Ensuring paths are robust for any OS
-    main_data_path = os.path.join("csv", "full_geotemporal_dataset.csv")
-    geojson_path = os.path.join("csv", "ken_admin2.geojson")
+    #main_data_path = os.path.join("csv", "full_geotemporal_dataset.csv")
+    #geojson_path = os.path.join("csv", "ken_admin2.geojson")
+    main_data_path = "csv/full_geotemporal_dataset.csv" # Standard path
+    geojson_path = "csv/ken_admin2.geojson"
     
     if os.path.exists(main_data_path):
         df = pd.read_csv(main_data_path)
