@@ -12,9 +12,22 @@ st.set_page_config(
     layout="wide"
 )
 
+# --- CUSTOM UI FIXES (Pointer Cursor & Styling) ---
+st.markdown("""
+    <style>
+        /* Force pointer cursor for dropdowns and interactive elements */
+        div[data-baseweb="select"], div[role="button"], .stSelectbox div {
+            cursor: pointer !important;
+        }
+        /* Highlight dropdown on hover */
+        div[data-baseweb="select"]:hover {
+            border-color: #e74c3c !important;
+        }
+    </style>
+    """, unsafe_allow_html=True)
+
 # --- 2. DYNAMIC PATHS ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Points to the NEW AI-generated predictions
 csv_path = os.path.join(BASE_DIR, "csv", "kcews_live_predictions.csv")
 geo_path = os.path.join(BASE_DIR, "csv", "ken_admin2.geojson")
 comparison_path = os.path.join(BASE_DIR, "csv", "model_performance_comparison.csv")
@@ -33,10 +46,24 @@ df = load_data()
 # --- 4. SIDEBAR NAVIGATION ---
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/commons/c/c2/WHO_logo.png", width=100)
-    st.title("Navigation")
+    st.title("K-CEWS Control")
     page = st.selectbox("Select View:", ["Executive Summary", "Regional Risk Map", "Data Engineering"])
+    
     st.divider()
     
+    # --- HISTORICAL HOTSPOT LIST ---
+    st.subheader("⚠️ Historical Burden")
+    if df is not None:
+        # Identifying areas that have ever had a recorded outbreak (1.0)
+        hotspots = df[df['Outbreak'] == 1.0]['Sub_County'].unique()
+        if len(hotspots) > 0:
+            st.warning(f"Monitoring {len(hotspots)} high-priority zones:")
+            for area in hotspots:
+                st.write(f"- 🔴 {area}")
+        else:
+            st.info("No historical outbreaks in current record.")
+    
+    st.divider()
     if df is not None:
         st.success(f"✅ AI Engine Active")
         st.caption(f"Surveillance Rows: {len(df):,}")
@@ -56,14 +83,12 @@ if page == "Executive Summary":
     
     sub_counties = df['Sub_County'].nunique() if df is not None else 0
     c1.metric("Sub-Counties Tracked", sub_counties)
-    # Reflecting the new Model Accuracy
     c2.metric("Outbreak Sensitivity", "100%", delta="Recall Score")
     c3.metric("Forecast Window", "14 Days", delta="Lead Time")
     
     st.divider()
     if df is not None:
         st.write("### AI Forecast Snapshot")
-        # Showing the new AI columns
         display_cols = ['Date', 'Sub_County', 'AI_Risk_Score', 'AI_Risk_Level', 'IMERG_PRECTOT']
         st.dataframe(df[display_cols].tail(10), use_container_width=True)
     else:
@@ -75,6 +100,7 @@ elif page == "Regional Risk Map":
     
     if os.path.exists(geo_path) and df is not None:
         latest_risk = df.sort_values('Date').groupby('Sub_County').tail(1)
+        history_list = df[df['Outbreak'] == 1.0]['Sub_County'].unique()
         
         # 1. TOP METRICS
         m1, m2, m3 = st.columns(3)
@@ -98,11 +124,17 @@ elif page == "Regional Risk Map":
                 match = latest_risk[latest_risk['Sub_County'] == geo_name]
                 
                 if not match.empty:
-                    # Logic using our new AI Risk Score
                     score = match.iloc[0]['AI_Risk_Score']
-                    if score >= 2.0: fill_color = "#e74c3c" # Red (Threshold 0.20)
-                    elif score >= 1.0: fill_color = "#f1c40f" # Yellow
-                    else: fill_color = "#2ecc71" # Green
+                    # Color Logic: Red (>=2.0), Yellow (>=1.0), Green (Else)
+                    # Special Case: Deep Red for historical hotspots currently at high risk
+                    if geo_name in history_list and score >= 2.0:
+                        fill_color = "#922b21" # Deep Crimson
+                    elif score >= 2.0: 
+                        fill_color = "#e74c3c" # Red
+                    elif score >= 1.0: 
+                        fill_color = "#f1c40f" # Yellow
+                    else: 
+                        fill_color = "#2ecc71" # Green
                     opacity = 0.8
                 else:
                     fill_color = "#d3d3d3"
@@ -126,17 +158,18 @@ elif page == "Regional Risk Map":
             st.write(f"**Surveillance Data: {focus_area}**")
             st.info(f"📅 **Sync Date:** {area_info['Date']}")
             
-            # AI Weather Monitor
             st.metric("Rainfall (14d Lag)", f"{area_info['rainfall_lag_14']} mm")
             st.metric("AI Risk Probability", f"{area_info['AI_Risk_Score'] * 10}%")
             
             st.divider()
             
             # AI-DRIVEN TEXT REPORT
+            is_hotspot = "YES" if focus_area in history_list else "NO"
             report_text = f"""
             K-CEWS AI INTERVENTION MEMO
             ----------------------------------
             Location: {focus_area}
+            Historical Hotspot: {is_hotspot}
             Prediction Date: {area_info['Date']}
             AI Risk Level: {area_info['AI_Risk_Level'].upper()}
             Confidence Score: {area_info['AI_Risk_Score']}/10
@@ -162,12 +195,11 @@ elif page == "Regional Risk Map":
 elif page == "Data Engineering":
     st.subheader("⚙️ AI Model Performance & Training")
     
-    # Show the Tournament Results
     if os.path.exists(comparison_path):
         st.write("### 🏆 Model Tournament Results")
         comp_df = pd.read_csv(comparison_path)
         st.dataframe(comp_df, use_container_width=True)
-        st.success("Selected Engine: XGBoost (Sensitivity Optimized)")
+        st.success("Selected Engine: XGBoost (Sensitivity Optimized for 100% Recall)")
     
     st.divider()
     
