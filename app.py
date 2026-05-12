@@ -64,53 +64,81 @@ if page == "Executive Summary":
         st.warning("Please ensure 'full_geotemporal_dataset.csv' is in the /csv folder.")
 
 # --- PAGE 2: REGIONAL RISK MAP (Upgraded to Red/Yellow/Green) ---
+
+# --- PAGE 2: REGIONAL RISK MAP (Phase 2 Upgrade) ---
 elif page == "Regional Risk Map":
-    st.subheader("📍 Geospatial Risk Analysis")
+    st.subheader("📍 High-Frequency Surveillance Command Center")
     
     if os.path.exists(geo_path) and df is not None:
-        # Get the latest data point for each sub-county to color the map
+        # A. TOP METRICS (Alert Bar)
         latest_risk = df.sort_values('Date').groupby('Sub_County').tail(1)
+        high_risk_count = len(latest_risk[latest_risk['Risk_Score'] >= 9])
         
-        # Create the Base Map
-        m = folium.Map(location=[0.02, 37.9], zoom_start=6, tiles="CartoDB positron")
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Sub-Counties with Data", len(latest_risk))
+        m2.metric("Critical Alerts (🔴)", high_risk_count)
+        m3.metric("System Status", "Live / Predictive")
         
-        # Load GeoJSON raw to manipulate colors
-        with open(geo_path) as f:
-            kenya_geojson = json.load(f)
+        st.divider()
 
-        # Iterate through GeoJSON and match names
-        for feature in kenya_geojson['features']:
-            # Normalize map name to UPPERCASE
-            geo_name = feature['properties']['adm2_name'].upper().strip()
+        # B. TWO-COLUMN LAYOUT
+        col_map, col_intel = st.columns([2, 1]) # Map takes 2/3, Intel takes 1/3
+
+        with col_map:
+            st.markdown("### Regional Risk Map")
+            # --- MAP LOGIC ---
+            m = folium.Map(location=[0.02, 37.9], zoom_start=6, tiles="CartoDB positron")
+            with open(geo_path) as f:
+                kenya_geojson = json.load(f)
+
+            for feature in kenya_geojson['features']:
+                geo_name = feature['properties']['adm2_name'].upper().strip()
+                match = latest_risk[latest_risk['Sub_County'] == geo_name]
+                
+                if not match.empty:
+                    score = match.iloc[0]['Risk_Score']
+                    fill_color = "#e74c3c" if score >= 9 else ("#f1c40f" if score >= 7 else "#2ecc71")
+                    opacity = 0.8
+                else:
+                    fill_color = "#d3d3d3"
+                    opacity = 0.2
+
+                folium.GeoJson(
+                    feature,
+                    style_function=lambda x, fc=fill_color, op=opacity: {
+                        'fillColor': fc, 'color': 'black', 'weight': 0.5, 'fillOpacity': op
+                    },
+                    tooltip=f"<b>{geo_name}</b>"
+                ).add_to(m)
             
-            # Find match in CSV
-            match = latest_risk[latest_risk['Sub_County'] == geo_name]
+            st_folium(m, width=700, height=500)
+
+        with col_intel:
+            st.markdown("### 🔍 Intelligence Panel")
+            # Selector for the user to pick which focus area to "monitor"
+            focus_area = st.selectbox("Select Area to Monitor:", latest_risk['Sub_County'].unique())
             
-            if not match.empty:
-                score = match.iloc[0]['Risk_Score']
-                # COLOR LOGIC: Red (>=9), Yellow (>=7), Green (<7)
-                fill_color = "#e74c3c" if score >= 9 else ("#f1c40f" if score >= 7 else "#2ecc71")
-                opacity = 0.7
-                label = f"Risk Score: {score}"
+            # Get specific data for the focus area
+            area_data = latest_risk[latest_risk['Sub_County'] == focus_area].iloc[0]
+            
+            # Weather Monitor Cards
+            st.write(f"**Current Environmental Status: {focus_area}**")
+            st.info(f"📅 Last Satellite Sync: {area_data['Date']}")
+            
+            st.metric("14-Day Rainfall Lag", f"{area_data['rainfall_lag_14']} mm")
+            st.metric("Current Humidity", f"{area_data['RH2M']}%")
+            
+            # Call to Action Logic
+            st.divider()
+            if area_data['Risk_Score'] >= 9:
+                st.error(f"⚠️ **URGENT ACTION REQUIRED**\n\nHigh risk score of {area_data['Risk_Score']} detected. Triggering 14-day intervention window for {focus_area}.")
+                st.button(f"Generate Report for {focus_area}")
             else:
-                fill_color = "#d3d3d3" # Grey for no data
-                opacity = 0.2
-                label = "No surveillance data"
+                st.success(f"✅ **ROUTINE SURVEILLANCE**\n\nNo immediate outbreak threat for {focus_area}. Continue standard WASH monitoring.")
 
-            folium.GeoJson(
-                feature,
-                style_function=lambda x, fc=fill_color, op=opacity: {
-                    'fillColor': fc,
-                    'color': 'black',
-                    'weight': 0.5,
-                    'fillOpacity': op
-                },
-                tooltip=f"<b>{geo_name}</b><br>{label}"
-            ).add_to(m)
-        
-        st_folium(m, width=1100, height=600)
     else:
-        st.error("❌ Required files (CSV or GeoJSON) missing.")
+        st.error("❌ Required files missing.")
+
 
 # --- PAGE 3: DATA ENGINEERING ---
 elif page == "Data Engineering":
