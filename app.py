@@ -65,29 +65,30 @@ if page == "Executive Summary":
 
 # --- PAGE 2: REGIONAL RISK MAP (Upgraded to Red/Yellow/Green) ---
 
-# --- PAGE 2: REGIONAL RISK MAP (Phase 2 Upgrade) ---
+
+# --- PAGE 2: REGIONAL RISK MAP (PHASE 2 UPGRADE) ---
 elif page == "Regional Risk Map":
     st.subheader("📍 High-Frequency Surveillance Command Center")
     
     if os.path.exists(geo_path) and df is not None:
-        # A. TOP METRICS (Alert Bar)
+        # 1. TOP METRICS (Quick Glance Alerts)
         latest_risk = df.sort_values('Date').groupby('Sub_County').tail(1)
-        high_risk_count = len(latest_risk[latest_risk['Risk_Score'] >= 9])
+        critical_alerts = len(latest_risk[latest_risk['Risk_Score'] >= 9])
         
         m1, m2, m3 = st.columns(3)
-        m1.metric("Sub-Counties with Data", len(latest_risk))
-        m2.metric("Critical Alerts (🔴)", high_risk_count)
-        m3.metric("System Status", "Live / Predictive")
+        m1.metric("Active Surveillance Sites", len(latest_risk))
+        m2.metric("Critical Risk Alerts (🔴)", critical_alerts)
+        m3.metric("Lead Time Status", "14-Day Window Active")
         
         st.divider()
 
-        # B. TWO-COLUMN LAYOUT
-        col_map, col_intel = st.columns([2, 1]) # Map takes 2/3, Intel takes 1/3
+        # 2. TWO-COLUMN COMMAND LAYOUT
+        col_map, col_intel = st.columns([2.2, 1]) # Map is larger, Intel is the sidebar
 
         with col_map:
-            st.markdown("### Regional Risk Map")
-            # --- MAP LOGIC ---
+            st.markdown("### 🗺️ Regional Risk Map")
             m = folium.Map(location=[0.02, 37.9], zoom_start=6, tiles="CartoDB positron")
+            
             with open(geo_path) as f:
                 kenya_geojson = json.load(f)
 
@@ -111,33 +112,47 @@ elif page == "Regional Risk Map":
                     tooltip=f"<b>{geo_name}</b>"
                 ).add_to(m)
             
-            st_folium(m, width=700, height=500)
+            st_folium(m, width=700, height=550)
 
         with col_intel:
             st.markdown("### 🔍 Intelligence Panel")
-            # Selector for the user to pick which focus area to "monitor"
-            focus_area = st.selectbox("Select Area to Monitor:", latest_risk['Sub_County'].unique())
+            # This selector lets the user "Zoom In" on a specific focus area
+            focus_area = st.selectbox("Monitor Sub-County:", latest_risk['Sub_County'].unique())
             
-            # Get specific data for the focus area
-            area_data = latest_risk[latest_risk['Sub_County'] == focus_area].iloc[0]
+            # Fetch the specific row for the selected area
+            area_info = latest_risk[latest_risk['Sub_County'] == focus_area].iloc[0]
             
-            # Weather Monitor Cards
-            st.write(f"**Current Environmental Status: {focus_area}**")
-            st.info(f"📅 Last Satellite Sync: {area_data['Date']}")
+            # THE WEATHER MONITOR (Your Idea)
+            st.write(f"**Surveillance Data for: {focus_area}**")
             
-            st.metric("14-Day Rainfall Lag", f"{area_data['rainfall_lag_14']} mm")
-            st.metric("Current Humidity", f"{area_data['RH2M']}%")
+            st.info(f"📅 **Sync Date:** {area_info['Date']}")
             
-            # Call to Action Logic
+            # Displaying the NASA IMERG and 14-day lag info
+            st.metric("Rainfall (14d Lag)", f"{area_info['rainfall_lag_14']} mm")
+            st.metric("Current Humidity", f"{area_info['RH2M']}%")
+            
+            # CALL TO ACTION LOGIC
             st.divider()
-            if area_data['Risk_Score'] >= 9:
-                st.error(f"⚠️ **URGENT ACTION REQUIRED**\n\nHigh risk score of {area_data['Risk_Score']} detected. Triggering 14-day intervention window for {focus_area}.")
-                st.button(f"Generate Report for {focus_area}")
+            # Replace the button section in the Intelligence Panel with this:
+            if area_info['Risk_Score'] >= 9:
+               st.error(f"🚨 **HIGH RISK ALERT** for {focus_area}")
+    
+              # Create a small dataframe for the report
+               report_data = pd.DataFrame([area_info])
+               csv_report = report_data.to_csv(index=False).encode('utf-8')
+
+               st.download_button(
+                label=f"📥 Download Intervention Report for {focus_area}",
+                data=csv_report,
+                file_name=f"KCEWS_Report_{focus_area}.csv",
+                mime="text/csv",
+               )
             else:
-                st.success(f"✅ **ROUTINE SURVEILLANCE**\n\nNo immediate outbreak threat for {focus_area}. Continue standard WASH monitoring.")
+                st.success(f"✅ **STABLE**\n\nConditions in {focus_area} are within safe thresholds. Continue routine monitoring.")
 
     else:
-        st.error("❌ Required files missing.")
+        st.error("❌ Required files (GeoJSON/CSV) not detected.")
+
 
 
 # --- PAGE 3: DATA ENGINEERING ---
