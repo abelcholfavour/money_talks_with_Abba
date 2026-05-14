@@ -9,26 +9,29 @@ import altair as alt
 # --- 1. PAGE SETUP ---
 st.set_page_config(
     page_title="K-CEWS | ProMax Command Center", 
-    page_icon="🧬",
+    page_icon="🇰🇪",
     layout="wide"
 )
 
 # --- CUSTOM UI FIXES ---
 st.markdown("""
     <style>
-        .main { background-color: #f8f9fa; }
-        div[data-baseweb="select"], div[role="button"], .stSelectbox div { cursor: pointer !important; }
-        .stMetric { background-color: #ffffff; padding: 15px; border-radius: 10px; border: 1px solid #e0e0e0; }
+        div[data-baseweb="select"], div[role="button"], .stSelectbox div {
+            cursor: pointer !important;
+        }
+        div[data-baseweb="select"]:hover {
+            border-color: #e74c3c !important;
+        }
+        .stMetric { background-color: #ffffff; padding: 10px; border-radius: 5px; border: 1px solid #eee; }
     </style>
     """, unsafe_allow_html=True)
 
 # --- 2. DYNAMIC PATHS ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Note: Using standard paths. Ensure files are in a 'csv' folder or root.
-csv_path = os.path.join(BASE_DIR, "kcews_live_predictions.csv")
-geo_path = os.path.join(BASE_DIR, "ken_admin2.geojson")
-comparison_path = os.path.join(BASE_DIR, "model_performance_comparison.csv")
-factors_path = os.path.join(BASE_DIR, "subcounty_risk_factors.csv")
+csv_path = os.path.join(BASE_DIR, "csv", "kcews_live_predictions.csv")
+geo_path = os.path.join(BASE_DIR, "csv", "ken_admin2.geojson")
+comparison_path = os.path.join(BASE_DIR, "csv", "model_performance_comparison.csv")
+factors_path = os.path.join(BASE_DIR, "csv", "subcounty_risk_factors.csv")
 
 # --- 3. DATA LOADING ---
 @st.cache_data
@@ -43,7 +46,9 @@ def load_data():
 @st.cache_data
 def load_risk_factors():
     if os.path.exists(factors_path):
-        return pd.read_csv(factors_path)
+        rf = pd.read_csv(factors_path)
+        rf['Sub_County'] = rf['Sub_County'].str.upper().str.strip()
+        return rf
     return None
 
 df = load_data()
@@ -53,60 +58,64 @@ risk_factors = load_risk_factors()
 with st.sidebar:
     st.image("https://upload.wikimedia.org/wikipedia/commons/c/c2/WHO_logo.png", width=100)
     st.title("K-CEWS ProMax")
-    page = st.selectbox("Command Deck:", ["Executive Summary", "Surveillance Map", "Data Science & EDA"])
+    page = st.selectbox("Select View:", ["Executive Summary", "Regional Risk Map", "Data Engineering"])
     
     st.divider()
     
-    # --- HISTORICAL HOTSPOT LIST ---
-    st.subheader("⚠️ High Burden Monitoring")
+    st.subheader("⚠️ Historical Burden")
     if df is not None:
         hotspots = df[df['Outbreak'] == 1.0]['Sub_County'].unique()
         if len(hotspots) > 0:
-            for area in hotspots[:5]: # Show top 5
+            st.warning(f"Monitoring {len(hotspots)} high-priority zones:")
+            for area in hotspots[:10]: # Limiting for UI cleanliness
                 st.write(f"- 🔴 {area}")
-            if len(hotspots) > 5:
-                st.caption(f"And {len(hotspots)-5} other priority zones.")
     
     st.divider()
-    st.info("**Lead Engineer's Note:** System optimized for 100% Outbreak Recall.")
+    if df is not None:
+        st.success(f"✅ AI Engine Active")
+        st.caption(f"Surveillance Rows: {len(df):,}")
+    
+    st.info("**Lead's Note:** System powered by Optimized XGBoost with 100% Outbreak Recall.")
 
 # --- 5. MAIN INTERFACE ---
-st.title("🇰🇪 K-CEWS: Public Health Command Center")
+st.title("🇰🇪 K-CEWS: Kenya Cholera Early Warning System")
+st.caption("PROMAX Edition: AI-Driven Predictive Surveillance & Logistics Command")
 
 # --- PAGE 1: EXECUTIVE SUMMARY ---
 if page == "Executive Summary":
-    st.subheader("📊 National Surveillance Pulse")
-    c1, c2, c3, c4 = st.columns(4)
+    st.subheader("📊 System Critical Metrics")
+    c1, c2, c3 = st.columns(3)
     
-    if df is not None:
-        latest_date = df['Date'].max()
-        active_warnings = len(df[(df['Date'] == latest_date) & (df['AI_Risk_Score'] >= 2.0)])
-        c1.metric("Sub-Counties Tracked", df['Sub_County'].nunique())
-        c2.metric("Active Warnings", active_warnings, delta="Critical Alert", delta_color="inverse")
-        c3.metric("Model Recall", "100%", help="Optimized to never miss a potential outbreak.")
-        c4.metric("Forecast Window", "14 Days", delta="Lead Time")
+    sub_counties = df['Sub_County'].nunique() if df is not None else 0
+    c1.metric("Sub-Counties Tracked", sub_counties)
+    c2.metric("Outbreak Sensitivity", "100%", delta="Recall Score")
+    c3.metric("Forecast Window", "14 Days", delta="Lead Time")
     
     st.divider()
-    st.markdown("### 📈 Recent Environmental Trends (14-Day Lags)")
     if df is not None:
-        # Aggregate rainfall trends across all tracked sub-counties
-        trend_data = df.groupby('Date')['IMERG_PRECTOT'].mean().reset_index()
-        chart = alt.Chart(trend_data.tail(30)).mark_line(color='#1f77b4').encode(
-            x='Date:T',
-            y=alt.Y('IMERG_PRECTOT:Q', title='Avg Precipitation (mm/day)'),
-            tooltip=['Date', 'IMERG_PRECTOT']
-        ).properties(height=300)
-        st.altair_chart(chart, use_container_width=True)
+        st.write("### AI Forecast Snapshot")
+        display_cols = ['Date', 'Sub_County', 'AI_Risk_Score', 'AI_Risk_Level', 'IMERG_PRECTOT']
+        st.dataframe(df[display_cols].tail(10), use_container_width=True)
 
-# --- PAGE 2: SURVEILLANCE MAP (PROMAX) ---
-elif page == "Surveillance Map":
-    if df is not None and os.path.exists(geo_path):
-        latest_df = df.sort_values('Date').groupby('Sub_County').tail(1)
+# --- PAGE 2: REGIONAL RISK MAP (PROMAX) ---
+elif page == "Regional Risk Map":
+    st.subheader("📍 AI Surveillance Command Center")
+    
+    if os.path.exists(geo_path) and df is not None:
+        latest_risk = df.sort_values('Date').groupby('Sub_County').tail(1)
+        history_list = df[df['Outbreak'] == 1.0]['Sub_County'].unique()
         
-        col_map, col_intel = st.columns([2, 1])
+        m1, m2, m3 = st.columns(3)
+        m1.metric("Active Sites", len(latest_risk))
+        m2.metric("Critical Risk (🔴)", len(latest_risk[latest_risk['AI_Risk_Level'] == 'High Risk']))
+        m3.metric("Moderate Risk (🟡)", len(latest_risk[latest_risk['AI_Risk_Level'] == 'Moderate']))
+        
+        st.divider()
+
+        col_map, col_intel = st.columns([2.2, 1]) 
 
         with col_map:
-            st.markdown("### 🗺️ AI-Powered Risk Distribution")
+            st.markdown("### 🗺️ Live Risk Map")
             m = folium.Map(location=[0.02, 37.9], zoom_start=6, tiles="CartoDB positron")
             
             with open(geo_path) as f:
@@ -114,92 +123,84 @@ elif page == "Surveillance Map":
 
             for feature in kenya_geojson['features']:
                 geo_name = feature['properties']['adm2_name'].upper().strip()
-                match = latest_df[latest_df['Sub_County'] == geo_name]
+                match = latest_risk[latest_risk['Sub_County'] == geo_name]
                 
                 if not match.empty:
                     score = match.iloc[0]['AI_Risk_Score']
-                    # 3-Tier Alert Logic
-                    if score >= 2.0: color = "#e74c3c" # Warning (Red)
-                    elif score >= 1.0: color = "#f1c40f" # Watch (Yellow)
-                    else: color = "#2ecc71" # Stable (Green)
-                    opacity = 0.7
+                    if geo_name in history_list and score >= 2.0: fill_color = "#922b21"
+                    elif score >= 2.0: fill_color = "#e74c3c"
+                    elif score >= 1.0: fill_color = "#f1c40f"
+                    else: fill_color = "#2ecc71"
+                    opacity = 0.8
                 else:
-                    color = "#d3d3d3"
-                    opacity = 0.1
+                    fill_color = "#d3d3d3"
+                    opacity = 0.2
 
                 folium.GeoJson(
                     feature,
-                    style_function=lambda x, c=color, o=opacity: {
-                        'fillColor': c, 'color': 'black', 'weight': 0.3, 'fillOpacity': o
+                    style_function=lambda x, fc=fill_color, op=opacity: {
+                        'fillColor': fc, 'color': 'black', 'weight': 0.5, 'fillOpacity': op
                     },
-                    tooltip=f"<b>{geo_name}</b><br>Risk Score: {match.iloc[0]['AI_Risk_Score'] if not match.empty else 'N/A'}"
+                    tooltip=f"<b>{geo_name}</b><br>AI Score: {match.iloc[0]['AI_Risk_Score'] if not match.empty else 'N/A'}"
                 ).add_to(m)
             
-            st_folium(m, height=600, width=800)
+            st_folium(m, width=700, height=550)
 
         with col_intel:
             st.markdown("### 🔍 Intelligence & Logistics")
-            focus_area = st.selectbox("Select Sub-County:", latest_df['Sub_County'].unique())
-            area_data = latest_df[latest_df['Sub_County'] == focus_area].iloc[0]
+            focus_area = st.selectbox("Monitor Sub-County:", latest_risk['Sub_County'].unique())
+            area_info = latest_risk[latest_risk['Sub_County'] == focus_area].iloc[0]
             
-            # --- 3-TIER ALERT DISPLAY ---
-            score = area_data['AI_Risk_Score']
-            if score >= 2.0:
-                st.error(f"🚨 ALERT: WARNING LEVEL")
-            elif score >= 1.0:
-                st.warning(f"⚠️ ALERT: WATCH LEVEL")
-            else:
-                st.success(f"✅ ALERT: STABLE")
+            st.info(f"📅 **Sync Date:** {area_info['Date'].date()}")
             
-            # --- LOGISTICS ESTIMATOR ---
-            st.markdown("#### 📦 Medical Logistics Needs")
-            # Baseline Risk from factors file (default to 8 if not found)
-            baseline = 8
+            # --- MEDICAL LOGISTICS ESTIMATOR (NEW PROMAX FEATURE) ---
+            baseline_score = 8
             if risk_factors is not None:
-                match_factor = risk_factors[risk_factors['Sub_County'].str.upper() == focus_area]
-                if not match_factor.empty:
-                    baseline = match_factor.iloc[0]['Risk_Score']
+                rf_match = risk_factors[risk_factors['Sub_County'] == focus_area]
+                if not rf_match.empty:
+                    baseline_score = rf_match.iloc[0]['Risk_Score']
             
-            # PROMAX Calculation Logic
-            est_population_proxy = baseline * 10000
-            chlorine_needed = round((est_population_proxy * score * 0.05) / 10, 2)
-            ors_kits = int(est_population_proxy * score * 0.1)
+            # Logic: Higher baseline risk + higher AI score = more supplies
+            pop_proxy = baseline_score * 5000 
+            chlorine = round((pop_proxy * area_info['AI_Risk_Score'] * 0.02), 1)
+            ors = int(pop_proxy * area_info['AI_Risk_Score'] * 0.5)
+
+            li1, li2 = st.columns(2)
+            li1.metric("Chlorine Needed", f"{chlorine}L")
+            li2.metric("ORS Kits", f"{ors} Units")
             
-            st.metric("Chlorine (HTH 70%)", f"{chlorine_needed} Liters")
-            st.metric("ORS Kits", f"{ors_kits} Units")
+            # --- 14-DAY SIGNATURE TREND (NEW PROMAX FEATURE) ---
+            st.markdown("#### 🌧️ 14-Day Rainfall Trend")
+            area_history = df[df['Sub_County'] == focus_area].tail(14)
+            st.line_chart(area_history.set_index('Date')['IMERG_PRECTOT'])
             
             st.divider()
             
-            # --- ENVIRONMENTAL SIGNATURE PLOT ---
-            st.markdown("#### 🌧️ 14-Day Rainfall Signature")
-            area_history = df[df['Sub_County'] == focus_area].tail(14)
-            st.line_chart(area_history.set_index('Date')['IMERG_PRECTOT'])
+            # AI-DRIVEN TEXT REPORT (RETAINED)
+            is_hotspot = "YES" if focus_area in history_list else "NO"
+            report_text = f"K-CEWS AI MEMO\nLoc: {focus_area}\nRisk: {area_info['AI_Risk_Level']}\nLogistics: Chlorine {chlorine}L, ORS {ors}"
 
-            # MEMO GENERATOR
-            memo = f"""K-CEWS INTERVENTION MEMO
---------------------------------
-LOCATION: {focus_area}
-ALERT LEVEL: {'WARNING' if score >= 2.0 else 'WATCH' if score >= 1.0 else 'STABLE'}
-AI RISK SCORE: {score}/10
-ESTIMATED LOGISTICS:
-- Chlorine: {chlorine_needed}L
-- ORS Kits: {ors_kits}
---------------------------------
-RECOMMENDED ACTION:
-{'Deploy Rapid Response Team (RRT) within 24 hours.' if score >= 2.0 else 'Increase community surveillance.'}
-"""
-            st.download_button("📥 Download Logistics Memo", memo, f"KCEWS_{focus_area}.txt")
+            if area_info['AI_Risk_Level'] == 'High Risk':
+                st.error(f"🚨 **HIGH RISK ALERT**")
+                st.download_button("📥 Download AI Memo", report_text, f"KCEWS_{focus_area}.txt", use_container_width=True)
+            else:
+                st.success(f"✅ **STABLE CONDITIONS**")
+                st.download_button("📥 Download Update", report_text, f"KCEWS_{focus_area}.txt", use_container_width=True)
 
-# --- PAGE 3: DATA SCIENCE & EDA ---
-elif page == "Data Science & EDA":
-    st.subheader("⚙️ Scientific Validation")
+# --- PAGE 3: DATA ENGINEERING (RETAINED FULLY) ---
+elif page == "Data Engineering":
+    st.subheader("⚙️ AI Model Performance & Training")
+    
     if os.path.exists(comparison_path):
-        st.write("#### Model Tournament Ranking")
-        st.table(pd.read_csv(comparison_path))
+        st.write("### 🏆 Model Tournament Results")
+        comp_df = pd.read_csv(comparison_path)
+        st.dataframe(comp_df, use_container_width=True)
+        st.success("Selected Engine: XGBoost (Sensitivity Optimized for 100% Recall)")
     
     st.divider()
-    st.markdown("#### Feature Importance (14-Day Lags)")
-    st.caption("Primary Predictor: IMERG_PRECTOT (Rainfall Lag)")
-    # Placeholder for a bar chart of feature importance if available
-    importance = pd.DataFrame({'Feature': ['Rainfall Lag', 'Humidity Lag', 'Temp Lag', 'WASH Score'], 'Weight': [0.45, 0.25, 0.20, 0.10]})
-    st.bar_chart(importance.set_index('Feature'))
+    
+    if df is not None:
+        st.write("### Environmental Variable Distribution (Surveillance Insights)")
+        st.write(df.describe())
+    else:
+        st.error("Data source not found.")
