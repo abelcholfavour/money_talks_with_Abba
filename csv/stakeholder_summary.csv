@@ -1,0 +1,5 @@
+precision,recall,f1-score,support,Model,Metric_Type
+0.493,0.905,0.638,4968.0,K-CEWS (Optimized XGBoost),1
+0.544,0.676,0.602,4968.0,Decision Tree,1
+0.59,0.652,0.619,4968.0,Negative Binomial,1
+0.598,0.634,0.615,4968.0,Random Forest,1
