@@ -82,7 +82,7 @@ with st.sidebar:
     st.divider()
     
     # --- ENDEMIC HOTSPOT HIGH-BURDEN CORRIDOR REGISTER ---
-    st.subheader("⚠️ High-Burden Baselines")
+    st.subheader("High-Burden Baselines")
     if risk_factors is not None:
         # High structural risk subcounties based on notebook metrics
         critical_corridors = risk_factors[risk_factors['Risk_Score'] >= 9]['Sub_County'].unique()
@@ -108,41 +108,111 @@ st.caption("Automated Environmental Surveillance, Climatological Risk Prediction
 st.divider()
 
 # --- PANEL VIEW 1: NATIONAL SURVEILLANCE SUMMARY ---
+# --- PANEL VIEW 1: NATIONAL SURVEILLANCE SUMMARY ---
 if page == "National Surveillance Summary":
-    st.subheader("📊 National Epidemiological Pulse")
-    metric_1, metric_2, metric_3, metric_4 = st.columns(4)
-    
     if df is not None:
-        # Evaluate the newest chronological prediction matrix row
+        # Evaluate the newest chronological prediction matrix row in the historical set
         latest_date = df['Date'].max()
         current_slice = df[df['Date'] == latest_date]
         
+        # Format the anchor date cleanly for the executive team
+        anchor_date_str = latest_date.strftime('%B %Y') if hasattr(latest_date, 'strftime') else str(latest_date)
+        
+        # Contextual Informational Banner explaining the historical data state
+        st.notice_markdown = st.info(
+            f"💡 **Operational Framework Note:** This system is anchored to a validated historical validation baseline (**{anchor_date_str}**). "
+            "The underlying analytics engine demonstrates real-world deployment readiness using historical satellite-derived indicators."
+        )
+        
+        st.markdown(f"### 📊 National Epidemiological Pulse <small style='color:gray; float:right;'>Reporting Matrix Anchor: {anchor_date_str}</small>", unsafe_allow_html=True)
+        
+        # --- ENHANCED EXECUTIVE METRIC CARDS ---
+        metric_1, metric_2, metric_3, metric_4 = st.columns(4)
+        
         active_emergency_nodes = len(current_slice[current_slice['AI_Risk_Score'] >= 7.0])
         active_caution_nodes = len(current_slice[(current_slice['AI_Risk_Score'] >= 3.5) & (current_slice['AI_Risk_Score'] < 7.0)])
+        total_subcounties = df['Sub_County'].nunique()
         
-        metric_1.metric("Monitored Reporting Sub-Counties", f"{df['Sub_County'].nunique()}")
-        metric_2.metric("Emergency Vectors (🔴 >= 7.0)", f"{active_emergency_nodes} Areas", delta="Immediate Resource Deployment" if active_emergency_nodes > 0 else "Stable", delta_color="inverse")
-        metric_3.metric("Caution Vectors (🟡 >= 3.5)", f"{active_caution_nodes} Areas", delta="Enhanced Sentinel Posture" if active_caution_nodes > 0 else "Stable")
-        metric_4.metric("Surveillance Lead Horizon", "14 Days", delta="Incubation Target")
+        with metric_1:
+            st.markdown(
+                f"<div style='border-left: 5px solid #008080; padding-left: 10px;'>"
+                f"<p style='color: gray; margin-bottom: 2px; font-size: 14px;'>Active Sentinels</p>"
+                f"<h2 style='margin: 0; color: #2c3e50;'>{total_subcounties} <span style='font-size:14px; color:gray;'>Sub-Counties</span></h2>"
+                f"</div>", 
+                unsafe_allow_html=True
+            )
+            
+        with metric_2:
+            delta_text = "🔴 Immediate Deployment Required" if active_emergency_nodes > 0 else "🟢 Status Nominal"
+            st.markdown(
+                f"<div style='border-left: 5px solid #c0392b; padding-left: 10px;'>"
+                f"<p style='color: gray; margin-bottom: 2px; font-size: 14px;'>Emergency Vectors (≥ 7.0)</p>"
+                f"<h2 style='margin: 0; color: #c0392b;'>{active_emergency_nodes} <span style='font-size:14px; color:gray;'>Areas</span></h2>"
+                f"<p style='margin:0; font-size:11px; color:#c0392b; font-weight:bold;'>{delta_text}</p>"
+                f"</div>", 
+                unsafe_allow_html=True
+            )
+            
+        with metric_3:
+            delta_text = "🟡 Enhanced Sentinel Posture" if active_caution_nodes > 0 else "🟢 Status Nominal"
+            st.markdown(
+                f"<div style='border-left: 5px solid #f39c12; padding-left: 10px;'>"
+                f"<p style='color: gray; margin-bottom: 2px; font-size: 14px;'>Caution Vectors (≥ 3.5)</p>"
+                f"<h2 style='margin: 0; color: #f39c12;'>{active_caution_nodes} <span style='font-size:14px; color:gray;'>Areas</span></h2>"
+                f"<p style='margin:0; font-size:11px; color:#f39c12; font-weight:bold;'>{delta_text}</p>"
+                f"</div>", 
+                unsafe_allow_html=True
+            )
+            
+        with metric_4:
+            st.markdown(
+                f"<div style='border-left: 5px solid #3498db; padding-left: 10px;'>"
+                f"<p style='color: gray; margin-bottom: 2px; font-size: 14px;'>Surveillance Lead Horizon</p>"
+                f"<h2 style='margin: 0; color: #3498db;'>14 <span style='font-size:14px; color:gray;'>Days Ahead</span></h2>"
+                f"<p style='margin:0; font-size:11px; color:gray;'>Pathogen Incubation Windows</p>"
+                f"</div>", 
+                unsafe_allow_html=True
+            )
+            
+        st.markdown("<br><hr>", unsafe_allow_html=True)
         
-        st.divider()
+        # --- CHRONOLOGICAL ENVIRONMENTAL TRAJECTORY (MULTILINE GRAPH) ---
+        st.markdown("### 📈 Chronological Environmental Profile")
+        st.caption("Aggregated national climatic anomalies tracking the correlation between moisture influx and temperature triggers over time.")
         
-        # --- TIME-SERIES REGIONAL METEOROLOGICAL ANOMALY TRENDS ---
-        st.markdown("### 📈 Chronological Environmental Profile (Aggregated National Trajectory)")
-        
-        # Using exact notebook engineered rolling columns
+        # Preparing aggregated environmental timeline metrics
         aggregated_trends = df.groupby('Date')[['rainfall_14d_sum', 'temp_14d_avg']].mean().reset_index()
         
-        climatological_chart = alt.Chart(aggregated_trends).mark_line(color='#008080', strokeWidth=2.5).encode(
-            x=alt.X('Date:T', title='Timeline Horizon'),
-            y=alt.Y('rainfall_14d_sum:Q', title='Mean 14-Day Cumulative Rainfall Volumetrics (mm)'),
-            tooltip=['Date', 'rainfall_14d_sum', 'temp_14d_avg']
-        ).properties(height=350).interactive()
+        # Melt dataframe to make it easy for Altair to chart multiple color-coded lines beautifully
+        melted_trends = aggregated_trends.melt(
+            id_vars=['Date'], 
+            value_vars=['rainfall_14d_sum', 'temp_14d_avg'],
+            var_name='Climatic Parameter', 
+            value_name='Value'
+        )
+        
+        # Mapping clean professional names for the chart legend
+        melted_trends['Climatic Parameter'] = melted_trends['Climatic Parameter'].map({
+            'rainfall_14d_sum': 'Mean Rainfall Volume (mm)',
+            'temp_14d_avg': 'Mean Temperature Baseline (°C)'
+        })
+        
+        # Beautiful Altair Chart with Selection Tooltips and Clear Encoding
+        climatological_chart = alt.Chart(melted_trends).mark_line(strokeWidth=3, interpolate='monotone').encode(
+            x=alt.X('Date:T', title='Historical Evaluation Timeline Horizon'),
+            y=alt.Y('Value:Q', title='Aggregated Environmental Sensor Metric Value'),
+            color=alt.Color('Climatic Parameter:N', scale=alt.Scale(domain=['Mean Rainfall Volume (mm)', 'Mean Temperature Baseline (°C)'], range=['#008080', '#e67e22'])),
+            tooltip=[
+                alt.Tooltip('Date:T', title='Date Window'),
+                alt.Tooltip('Climatic Parameter:N', title='Parameter Checked'),
+                alt.Tooltip('Value:Q', format='.2f', title='Sensor Value Reading')
+            ]
+        ).properties(height=380).interactive()
         
         st.altair_chart(climatological_chart, use_container_width=True)
+        
     else:
-        st.warning("Awaiting prediction pipeline generation data. Verify that `csv/kcews_live_predictions.csv` has been exported by the notebook.")
-
+        st.warning("⚠️ Awaiting prediction pipeline generation data. Verify that `csv/kcews_live_predictions.csv` has been exported by your machine learning notebook.")
 # --- PANEL VIEW 2: GEOSPATIAL RISK MATRIX ---
 elif page == "Geospatial Risk Matrix":
     if df is not None and os.path.exists(geo_path):
