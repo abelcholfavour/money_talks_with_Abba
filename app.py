@@ -127,7 +127,7 @@ if page == "National Surveillance Summary":
             tooltip=['Date', 'rainfall_14d_sum', 'temp_14d_avg']
         ).properties(height=350).interactive()
         
-        st.altair_chart(climatological_chart, use_container_width=True)
+        st.altair_chart(climatological_chart, width="stretch")
     else:
         st.warning("Awaiting prediction pipeline generation data. Verify that `csv/kcews_live_predictions.csv` has been exported by the notebook.")
 
@@ -202,7 +202,7 @@ elif page == "Geospatial Risk Matrix":
             
             allocated_col_1, allocated_col_2 = st.columns(2)
             allocated_col_1.metric("Water Purification Cargo (HTH 70%)", f"{calculated_chlorine_metric} kg")
-            allocated_col_2.metric("Oral Rehydration Kits", f"{calculated_ors_volume} Units")
+            allocated_col_2.metric("Oral Rehydration Kits", f"{allocated_ors_volume} Units")
             
             st.markdown("#### 🌧️ Local Antecedent Precipitation Trend")
             local_history = df[df['Sub_County'] == selected_sentinel_node].sort_values('Date').tail(45)
@@ -237,7 +237,7 @@ MANDATED RAPID RESPONSE TIMELINE:
                 label="📥 Export Institutional Response Directive",
                 data=official_directive_payload,
                 file_name=f"KCEWS_DIRECTIVE_{selected_sentinel_node}.txt",
-                use_container_width=True
+                width="stretch"
             )
     else:
         st.warning("Verify geospatial definitions path configurations: `/csv/ken_admin2.geojson` must exist to render boundary matrix projections.")
@@ -248,7 +248,7 @@ elif page == "Methodological Validation & XAI":
     
     if os.path.exists(comparison_path):
         st.write("#### 🏆 Out-of-Sample Machine Learning Tournament Metrics")
-        st.dataframe(pd.read_csv(comparison_path), use_container_width=True)
+        st.dataframe(pd.read_csv(comparison_path), width="stretch")
     else:
         st.write("#### 🏆 Validated Engine Framework Architecture Benchmarks")
         institutional_evaluation_matrix = pd.DataFrame({
@@ -269,11 +269,11 @@ elif page == "Methodological Validation & XAI":
         'Global Predictive Influence (Feature Weights)': [0.38, 0.29, 0.16, 0.09, 0.05, 0.03]
     })
     
-    # Corrected attribute mapping convention from camelCase to system snake_case format
+    # Corrected attribute key configuration parameter to valid 'corner_radius' syntax
     xai_visualization_node = alt.Chart(institutional_xai_vectors).mark_bar(color='#008080', corner_radius=4).encode(
         x=alt.X('Global Predictive Influence (Feature Weights):Q', title='Predictive Influence (Feature Weight)'),
         y=alt.Y('Environmental Driver Proxies:N', sort='-x', title='Surveillance Input Matrix Parameters'),
         tooltip=['Environmental Driver Proxies', 'Global Predictive Influence (Feature Weights)']
     ).properties(height=280)
     
-    st.altair_chart(xai_visualization_node, use_container_width=True)
+    st.altair_chart(xai_visualization_node, width="stretch")
