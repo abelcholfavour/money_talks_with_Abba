@@ -338,15 +338,60 @@ MANDATED RAPID RESPONSE TIMELINE:
 # --- PANEL VIEW 3: METHODOLOGICAL VALIDATION & XAI ---
 elif page == "Methodological Validation & XAI":
     st.markdown("### ⚙️ Algorithmic Integrity & Global Feature Attribution Verification")
-    st.caption("Peer-reviewed performance tracking and cryptographic feature weight verification against clinical and environmental benchmarks.")
+    st.caption("Verifying machine learning operational feature importance weights against established biological and hydrological dynamics.")
     
     # Explanatory context for public health officials who aren't data scientists
     st.info(
-        "💡 **Evaluation Framework Note:** In epidemiological forecasting, our core objective is maximizing **Sensitivity (Recall)**. "
-        "A high recall ensures that our predictive core flags an impending pathogen surge **before** widespread clinical presentation occurs, minimizing false negatives."
+        "💡 **Operational Insights:** This panel reveals the exact environmental factors that drive the system's risk scores. "
+        "By looking at these weights, the Ministry of Health and WHO can see exactly which parameters our AI relies on to generate the 14-day early warning window."
     )
     
-    # --- MODEL TOURNAMENT SECTION ---
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- STEP 1: GLOBAL INTERPRETABILITY EXPLAINABLE AI LAYER (NOW TOP CHOSEN VERTICAL ELEMENT) ---
+    st.markdown("#### 🧬 Explainable AI (XAI): Global Environmental Feature Attribution Metrics")
+    
+    # Dynamically displaying the feature importance structure mapped out in your XGBoost notebook code
+    institutional_xai_vectors = pd.DataFrame({
+        'Environmental Driver Proxies': [
+            'humidity_lag_14 (Boundary Layer Moisture)', 
+            'rainfall_14d_sum (Precipitation Volume)', 
+            'Risk_Score (Structural WASH Fragility)', 
+            'temp_14d_avg (Thermal Incubation Index)', 
+            'rainfall_lag_14 (Antecedent Moisture Lag)', 
+            'temp_lag_14 (Antecedent Thermal Lag)'
+        ],
+        'Global Predictive Influence (Feature Weights)': [0.38, 0.29, 0.16, 0.09, 0.05, 0.03]
+    })
+    
+    # Polished, full-width customized Altair Chart
+    xai_visualization_node = alt.Chart(institutional_xai_vectors).mark_bar(color='#008080').encode(
+        x=alt.X('Global Predictive Influence (Feature Weights):Q', title='Predictive Influence Weight (0.0 - 1.0)'),
+        y=alt.Y('Environmental Driver Proxies:N', sort='-x', title=None),
+        tooltip=[
+            alt.Tooltip('Environmental Driver Proxies:N', title='Surveillance Matrix Proxy'),
+            alt.Tooltip('Global Predictive Influence (Feature Weights):Q', format='.2f', title='Model Weight Attribution')
+        ]
+    ).properties(height=320)
+    
+    st.altair_chart(xai_visualization_node, use_container_width=True)
+
+    st.markdown("<br>", unsafe_allow_html=True)
+
+    # --- STEP 2: CLINICAL / BIOLOGICAL ALIGNMENT PARAGRAPH (PLACED DIRECTLY BELOW CHART) ---
+    st.markdown("<p style='font-weight: bold; font-size: 18px; color: #2c3e50; margin-bottom: 5px;'>🔬 Clinical Alignment Review</p>", unsafe_allow_html=True)
+    st.markdown(
+        "The model weights perfectly map to the **14-day incubation cycle** of *Vibrio cholerae*:\n\n"
+        "* **Atmospheric Humidity & Rainfall (`~67%` Combined Weight):** Acts as the primary environmental catalyst. Heavy rainfall volumes overwhelm local sanitation barriers, causing contaminated runoff to infiltrate public open-source water networks.\n"
+        "* **Structural WASH Fragility (`16%` Weight):** Serves as the localized baseline multiplier. Areas with poor water, sanitation, and hygiene infrastructure lack systemic buffers against these moisture surges.\n"
+        "* **Thermal Profiles (`12%` Combined Weight):** High boundary layer temperatures control the bacterial multiplication speed within aquatic surface reservoirs, accelerating pathogen concentration spikes."
+    )
+    
+    st.success("🏁 **Validation Conclusion:** The algorithm demonstrates high biological conformity. It uses environmental and infrastructure vectors logically to safely generate an advanced 14-day early warning window.")
+
+    st.markdown("<br><hr>", unsafe_allow_html=True)
+    
+    # --- STEP 3: MODEL TOURNAMENT SECTION (PUSHED SECURELY TO THE BOTTOM) ---
     if os.path.exists(comparison_path):
         st.markdown("#### 🏆 Out-of-Sample Machine Learning Tournament Metrics")
         st.caption("Active cross-validation scoring of the champion model vs. structural alternatives across temporal holdout groups.")
@@ -363,50 +408,3 @@ elif page == "Methodological Validation & XAI":
             'Unified Macro F1 Coefficient': ['0.638', '0.675', '0.488', '0.412']
         })
         st.dataframe(institutional_evaluation_matrix, use_container_width=True, hide_index=True)
-
-    st.markdown("<br><hr>", unsafe_allow_html=True)
-    
-    # --- GLOBAL INTERPRETABILITY EXPLAINABLE AI LAYER ---
-    st.markdown("#### 🧬 Explainable AI (XAI): Global Environmental Feature Attribution Metrics")
-    st.caption("Verifying machine learning operational feature importance weights against established biological and hydrological dynamics.")
-    
-    # Two-column layout: Visual Chart on the left, Clinical/Biological explanation on the right
-    xai_col_left, xai_col_right = st.columns([5, 4])
-    
-    # Dynamically displaying the feature importance structure mapped out in your XGBoost notebook code
-    institutional_xai_vectors = pd.DataFrame({
-        'Environmental Driver Proxies': [
-            'humidity_lag_14 (Boundary Layer Moisture)', 
-            'rainfall_14d_sum (Precipitation Volume)', 
-            'Risk_Score (Structural WASH Fragility)', 
-            'temp_14d_avg (Thermal Incubation Index)', 
-            'rainfall_lag_14 (Antecedent Moisture Lag)', 
-            'temp_lag_14 (Antecedent Thermal Lag)'
-        ],
-        'Global Predictive Influence (Feature Weights)': [0.38, 0.29, 0.16, 0.09, 0.05, 0.03]
-    })
-    
-    with xai_col_left:
-        # Polished, customized Altair Chart
-        xai_visualization_node = alt.Chart(institutional_xai_vectors).mark_bar(color='#008080').encode(
-            x=alt.X('Global Predictive Influence (Feature Weights):Q', title='Predictive Influence Weight (0.0 - 1.0)'),
-            y=alt.Y('Environmental Driver Proxies:N', sort='-x', title=None),
-            tooltip=[
-                alt.Tooltip('Environmental Driver Proxies:N', title='Surveillance Matrix Proxy'),
-                alt.Tooltip('Global Predictive Influence (Feature Weights):Q', format='.2f', title='Model Weight Attribution')
-            ]
-        ).properties(height=300)
-        
-        st.altair_chart(xai_visualization_node, use_container_width=True)
-
-    with xai_col_right:
-        st.markdown("<p style='font-weight: bold; color: #2c3e50; margin-bottom: 5px;'>🔬 Clinical Alignment Review</p>", unsafe_allow_html=True)
-        st.markdown(
-            "The model weights perfectly map to the **14-day incubation cycle** of *Vibrio cholerae*:\n\n"
-            "* **Atmospheric Humidity & Rainfall (`~67%` Combined Weight):** Acts as the primary environmental catalyst. Heavy rainfall volumes overwhelm local sanitation barriers, causing contaminated runoff to infiltrate public open-source water networks.\n"
-            "* **Structural WASH Fragility (`16%` Weight):** Serves as the localized baseline multiplier. Areas with poor water, sanitation, and hygiene infrastructure lack systemic buffers against these moisture surges.\n"
-            "* **Thermal Profiles (`12%` Combined Weight):** High boundary layer temperatures control the bacterial multiplication speed within aquatic surface reservoirs, accelerating pathogen concentration spikes."
-        )
-
-    st.markdown("<br>", unsafe_allow_html=True)
-    st.success("🏁 **Validation Conclusion:** The algorithm demonstrates high biological conformity. It uses environmental and infrastructure vectors logically to safely generate an advanced 14-day early warning window.")
