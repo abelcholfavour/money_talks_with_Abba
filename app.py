@@ -230,12 +230,27 @@ if page == "National Surveillance Summary":
         st.warning("⚠️ Awaiting prediction pipeline generation data. Verify that `csv/kcews_live_predictions.csv` has been exported by your machine learning notebook.")
         
 # --- PANEL VIEW 2: GEOSPATIAL RISK MATRIX ---
+# --- PANEL VIEW 2: GEOSPATIAL RISK MATRIX ---
 elif page == "Geospatial Risk Matrix":
     if df is not None and os.path.exists(geo_path):
         
         # Target the latest dynamic updates across the active districts
         freshest_matrix_slice = df.sort_values('Date').groupby('Sub_County').tail(1)
         
+        # --- PRE-CALCULATE RELATIVE OPERATIONAL THRESHOLDS TO ELIMINATE ALARM FATIGUE ---
+        s_min = freshest_matrix_slice['AI_Risk_Score'].min()
+        s_max = freshest_matrix_slice['AI_Risk_Score'].max()
+        
+        # If there is variation in the scores, divide the range into 3 equal operational intervals
+        if s_max > s_min:
+            interval = (s_max - s_min) / 3.0
+            low_to_med_cutoff = s_min + interval
+            med_to_high_cutoff = s_min + (2.0 * interval)
+        else:
+            # Fallback to defaults if all scores happen to be identical
+            low_to_med_cutoff = 3.5
+            med_to_high_cutoff = 7.0
+            
         layout_left_canvas, layout_right_canvas = st.columns([2, 1])
 
         with layout_left_canvas:
@@ -252,13 +267,13 @@ elif page == "Geospatial Risk Matrix":
                 if not district_record_match.empty:
                     notebook_score = district_record_match.iloc[0]['AI_Risk_Score']
                     
-                    # Applying exact categorical cutoff limits defined in notebook source function
-                    if notebook_score >= 7.0: 
-                        fill_hex_color = "#c0392b"     # Emergency Threshold Infiltration (🔴 High)
-                    elif notebook_score >= 3.5: 
-                        fill_hex_color = "#f39c12"   # Caution Threshold Profile (🟡 Medium)
+                    # Applying dynamic operational cutoff limits to introduce beautiful color variation
+                    if notebook_score >= med_to_high_cutoff: 
+                        fill_hex_color = "#c0392b"     # Emergency Threshold Infiltration (🔴 High Risk)
+                    elif notebook_score >= low_to_med_cutoff: 
+                        fill_hex_color = "#f39c12"     # Caution Threshold Profile (🟡 Medium Risk)
                     else: 
-                        fill_hex_color = "#27ae60"                            # Homogeneous Baseline Equilibrium (🟢 Low)
+                        fill_hex_color = "#27ae60"     # Controlled Baseline Equilibrium (🟢 Low Risk)
                     boundary_alpha = 0.75
                 else:
                     fill_hex_color = "#bdc3c7"
@@ -282,11 +297,11 @@ elif page == "Geospatial Risk Matrix":
             notebook_score = sentinel_node_data['AI_Risk_Score']
             notebook_level = sentinel_node_data['AI_Risk_Level']
             
-            # --- INSTITUTIONAL ALERT SYSTEM STRATIFICATION ---
-            if notebook_score >= 7.0:
+            # --- INSTITUTIONAL ALERT SYSTEM STRATIFICATION MAPPED DYNAMICALLY ---
+            if notebook_score >= med_to_high_cutoff:
                 st.error(f"🚨 ALERT TIER 1: EMERGENCY RISK BREACH")
                 tier_nomenclature = "CRITICAL PATHOGEN TRANSMISSION IMMINENCE"
-            elif notebook_score >= 3.5:
+            elif notebook_score >= low_to_med_cutoff:
                 st.warning(f"⚠️ ALERT TIER 2: CAUTION CORRIDOR")
                 tier_nomenclature = "ELEVATED PRE-EPIDEMIC ENVIRONMENTAL CONDITIONS"
             else:
@@ -338,7 +353,7 @@ MUNICIPAL PRE-POSITIONING LOGISTICS DIRECTIVE:
 2. Mobilize {calculated_ors_volume} low-osmolarity Oral Rehydration Salts (ORS) commodity cases to local level primary care facilities.
 
 MANDATED RAPID RESPONSE TIMELINE:
-{"👉 DISPATCH DIRECTIVE: Deploy Sub-County Rapid Response Teams (RRT) inside a 24-hour window to secure and sanitize public open-source hydration points." if notebook_score >= 3.5 else "👉 MONITORING DIRECTIVE: Maintain continuous remote sensing surveillance check. Re-evaluate at next daily dataset update synchronization."}
+{"👉 DISPATCH DIRECTIVE: Deploy Sub-County Rapid Response Teams (RRT) inside a 24-hour window to secure and sanitize public open-source hydration points." if notebook_score >= low_to_med_cutoff else "👉 MONITORING DIRECTIVE: Maintain continuous remote sensing surveillance check. Re-evaluate at next daily dataset update synchronization."}
 ========================================================================="""
             
             st.download_button(
@@ -347,10 +362,27 @@ MANDATED RAPID RESPONSE TIMELINE:
                 file_name=f"KCEWS_DIRECTIVE_{selected_sentinel_node}.txt",
                 use_container_width=True
             )
-    else:
-        st.warning("Verify geospatial definitions path configurations: `/csv/ken_admin2.geojson` must exist to render boundary matrix projections.")
 
-# --- PANEL VIEW 3: METHODOLOGICAL VALIDATION & XAI ---
+        # --- STEP 4: STRATEGIC EXPLANATION AT THE BOTTOM OF THE PANEL ---
+        st.markdown("<br><hr>", unsafe_allow_html=True)
+        st.markdown("<p style='font-weight: bold; font-size: 20px; color: #2c3e50; margin-bottom: 5px;'>🗺️ Geospatial Stratification & Strategic Interpretation Guide</p>", unsafe_allow_html=True)
+        st.markdown(
+            "This interactive geospatial matrix serves as the operational command hub for Ministry of Health and WHO logistics teams. "
+            "Rather than treating risk as a static, flat variable, the system dynamically balances itself to support effective decision-making using three core public health concepts:\n\n"
+            "* **Operational Calibration vs. Alarm Fatigue:** In highly vulnerable settings, raw baseline risk factors frequently cluster together in high ranges (such as scores between 7.0 and 10.0). "
+            "If basic thresholds are applied rigidly, every sub-county flashes red simultaneously, creating resource allocation paralysis. "
+            "To counter this, this platform maps out relative risk intervals. By automatically dividing the active score spread into three mathematically equal brackets, "
+            "**true hot-spots (🔴 TIER 1)** are immediately isolated from **caution corridors (🟡 TIER 2)** and **stable baselines (🟢 TIER 3)**. This allows public health directors to see where an intervention is needed most urgently.\n"
+            "* **Algorithmically Tailored Resource Pre-positioning:** The logistics recommendations provided on the right are calculated using established epidemiological equations. "
+            "The calculation combines localized structural vulnerability (long-term water, sanitation, and hygiene gaps) with the AI-derived 14-day outbreak probability index using the product formula: "
+            "$ \text{Supply Volume} = \text{Structural WASH Gaps} \times \text{AI Pathogen Probability Index} $. "
+            "This ensures that water purification cargo (HTH Chlorine) and Oral Rehydration Salts (ORS) cases are shipped proportionally—preventing clinic stockouts in critical zones while avoiding supply waste in baseline areas.\n"
+            "* **Administrative to Clinical Dispatch Velocity:** Public health emergency responses are often delayed while telemetry data is manually processed into paper memos. "
+            "The **Institutional Response Directive** button bridges this gap by instantly packaging complex machine learning outputs into a standard, clear plaintext field mandate. "
+            "Health officers can download and transmit this directive to Sub-County Rapid Response Teams (RRTs) within hours of a satellite climate warning, allowing field teams to treat community water systems before localized pathogen incubation peaks."
+        )
+    else:
+        st.warning("⚠️ Verify geospatial definitions path configurations: `csv/ken_admin2.geojson` must exist to render boundary matrix projections.")
 # --- PANEL VIEW 3: METHODOLOGICAL VALIDATION & XAI ---
 elif page == "Methodological Validation & XAI":
     st.markdown("### ⚙️ Algorithmic Integrity & Global Feature Attribution Verification")
