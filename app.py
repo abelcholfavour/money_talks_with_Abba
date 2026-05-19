@@ -126,12 +126,25 @@ if page == "National Surveillance Summary":
         
         st.markdown(f"### 📊 National Epidemiological Pulse <small style='color:gray; float:right;'>Reporting Matrix Anchor: {anchor_date_str}</small>", unsafe_allow_html=True)
         
+        # --- NEW CALIBRATION: CALCULATE DYNAMIC CUTOFFS TO MATCH THE MAP CORRECTION ---
+        s_min = current_slice['AI_Risk_Score'].min()
+        s_max = current_slice['AI_Risk_Score'].max()
+        
+        if s_max > s_min:
+            interval = (s_max - s_min) / 3.0
+            low_to_med_cutoff = s_min + interval
+            med_to_high_cutoff = s_min + (2.0 * interval)
+        else:
+            low_to_med_cutoff = 3.5
+            med_to_high_cutoff = 7.0
+            
+        # Classify metric nodes dynamically matching the map colors exactly
+        active_emergency_nodes = len(current_slice[current_slice['AI_Risk_Score'] >= med_to_high_cutoff])
+        active_caution_nodes = len(current_slice[(current_slice['AI_Risk_Score'] >= low_to_med_cutoff) & (current_slice['AI_Risk_Score'] < med_to_high_cutoff)])
+        total_subcounties = df['Sub_County'].nunique()
+        
         # --- ENHANCED EXECUTIVE METRIC CARDS ---
         metric_1, metric_2, metric_3, metric_4 = st.columns(4)
-        
-        active_emergency_nodes = len(current_slice[current_slice['AI_Risk_Score'] >= 7.0])
-        active_caution_nodes = len(current_slice[(current_slice['AI_Risk_Score'] >= 3.5) & (current_slice['AI_Risk_Score'] < 7.0)])
-        total_subcounties = df['Sub_County'].nunique()
         
         with metric_1:
             st.markdown(
@@ -146,7 +159,7 @@ if page == "National Surveillance Summary":
             delta_text = "🔴 Immediate Deployment Required" if active_emergency_nodes > 0 else "🟢 Status Nominal"
             st.markdown(
                 f"<div style='border-left: 5px solid #c0392b; padding-left: 10px;'>"
-                f"<p style='color: gray; margin-bottom: 2px; font-size: 14px;'>Emergency Vectors (≥ 7.0)</p>"
+                f"<p style='color: gray; margin-bottom: 2px; font-size: 14px;'>Emergency Vectors (🔴 ≥ {round(med_to_high_cutoff, 1)})</p>"
                 f"<h2 style='margin: 0; color: #c0392b;'>{active_emergency_nodes} <span style='font-size:14px; color:gray;'>Areas</span></h2>"
                 f"<p style='margin:0; font-size:11px; color:#c0392b; font-weight:bold;'>{delta_text}</p>"
                 f"</div>", 
@@ -157,7 +170,7 @@ if page == "National Surveillance Summary":
             delta_text = "🟡 Enhanced Sentinel Posture" if active_caution_nodes > 0 else "🟢 Status Nominal"
             st.markdown(
                 f"<div style='border-left: 5px solid #f39c12; padding-left: 10px;'>"
-                f"<p style='color: gray; margin-bottom: 2px; font-size: 14px;'>Caution Vectors (≥ 3.5)</p>"
+                f"<p style='color: gray; margin-bottom: 2px; font-size: 14px;'>Caution Vectors (🟡 ≥ {round(low_to_med_cutoff, 1)})</p>"
                 f"<h2 style='margin: 0; color: #f39c12;'>{active_caution_nodes} <span style='font-size:14px; color:gray;'>Areas</span></h2>"
                 f"<p style='margin:0; font-size:11px; color:#f39c12; font-weight:bold;'>{delta_text}</p>"
                 f"</div>", 
@@ -213,7 +226,7 @@ if page == "National Surveillance Summary":
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # --- NEW ADDITION: ECO-CLIMATOLOGICAL ANALYSIS BREAKDOWN ---
+        # --- ECO-CLIMATOLOGICAL ANALYSIS BREAKDOWN ---
         st.markdown("<p style='font-weight: bold; font-size: 18px; color: #2c3e50; margin-bottom: 5px;'>🌧️ Eco-Climatological Dynamics & Pathogen Drivers</p>", unsafe_allow_html=True)
         st.markdown(
             "This timeline tracks the dual-axis environmental stressors that dictate cholera survival and distribution patterns across Kenya. "
@@ -228,8 +241,6 @@ if page == "National Surveillance Summary":
         
     else:
         st.warning("⚠️ Awaiting prediction pipeline generation data. Verify that `csv/kcews_live_predictions.csv` has been exported by your machine learning notebook.")
-        
-# --- PANEL VIEW 2: GEOSPATIAL RISK MATRIX ---
 # --- PANEL VIEW 2: GEOSPATIAL RISK MATRIX ---
 elif page == "Geospatial Risk Matrix":
     if df is not None and os.path.exists(geo_path):
