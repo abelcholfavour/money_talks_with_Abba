@@ -119,7 +119,7 @@ if page == "National Surveillance Summary":
         anchor_date_str = latest_date.strftime('%B %Y') if hasattr(latest_date, 'strftime') else str(latest_date)
         
         # Contextual Informational Banner explaining the historical data state
-        st.notice_markdown = st.info(
+        st.info(
             f"💡 **Operational Framework Note:** This system is anchored to a validated historical validation baseline (**{anchor_date_str}**). "
             "The underlying analytics engine demonstrates real-world deployment readiness using historical satellite-derived indicators."
         )
@@ -207,12 +207,28 @@ if page == "National Surveillance Summary":
                 alt.Tooltip('Climatic Parameter:N', title='Parameter Checked'),
                 alt.Tooltip('Value:Q', format='.2f', title='Sensor Value Reading')
             ]
-        ).properties(height=380).interactive()
+        ).properties(height=350).interactive()
         
         st.altair_chart(climatological_chart, use_container_width=True)
         
+        st.markdown("<br>", unsafe_allow_html=True)
+        
+        # --- NEW ADDITION: ECO-CLIMATOLOGICAL ANALYSIS BREAKDOWN ---
+        st.markdown("<p style='font-weight: bold; font-size: 18px; color: #2c3e50; margin-bottom: 5px;'>🌧️ Eco-Climatological Dynamics & Pathogen Drivers</p>", unsafe_allow_html=True)
+        st.markdown(
+            "This timeline tracks the dual-axis environmental stressors that dictate cholera survival and distribution patterns across Kenya. "
+            "Public health teams should analyze the graph peaks using two core environmental phenomena:\n\n"
+            "* **The Precipitation Flush Shock (Teal Line):** Sharp spikes in the 14-day cumulative rainfall represent extreme weather events. "
+            "In high-burden sub-counties, these sudden downpours lead to urban flash floods and rural runoff that break down shallow sanitation lines, "
+            "physically forcing fecal pathogens into open water sources used by the community.\n"
+            "* **The Thermal Incubation Trigger (Orange Line):** Sustained elevated temperatures create an ideal ecological breeding ground. "
+            "Higher water temperatures accelerate the metabolic and multiplication rates of *Vibrio cholerae* in local alkaline aquatic environments. "
+            "When a temperature spike closely follows a heavy rainfall event, it creates the ultimate pre-epidemic condition for an explosive outbreak."
+        )
+        
     else:
         st.warning("⚠️ Awaiting prediction pipeline generation data. Verify that `csv/kcews_live_predictions.csv` has been exported by your machine learning notebook.")
+        
 # --- PANEL VIEW 2: GEOSPATIAL RISK MATRIX ---
 elif page == "Geospatial Risk Matrix":
     if df is not None and os.path.exists(geo_path):
