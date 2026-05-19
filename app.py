@@ -64,7 +64,15 @@ risk_factors = load_baseline_structural_factors()
 
 # --- 4. NAVIGATION CONTROL PANEL & SENTINEL REGISTER ---
 with st.sidebar:
-    st.image("https://upload.wikimedia.org/wikipedia/commons/c/c2/WHO_logo.png", width=110)
+    # Check if the unified local image exists, otherwise fall back to a web URL
+    local_logo_path = os.path.join(BASE_DIR, "Image", "all3.png")
+    
+    if os.path.exists(local_logo_path):
+        st.image(local_logo_path, use_container_width=True)
+    else:
+        # Fallback to a clear placeholder if you haven't uploaded the file yet
+        st.image("https://upload.wikimedia.org/wikipedia/commons/c/c2/WHO_logo.png", width=110)
+        
     st.title("Navigation Panel")
     page = st.selectbox(
         "Epidemiological View Selector:", 
