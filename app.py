@@ -35,7 +35,6 @@ st.markdown("""
 
 # --- 2. SURVEILLANCE DATA REGISTRY PATHS ---
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Directly tracking the file paths specified in your notebook pipeline
 csv_path = os.path.join(BASE_DIR, "csv", "kcews_live_predictions.csv")
 geo_path = os.path.join(BASE_DIR, "csv", "ken_admin2.geojson")
 factors_path = os.path.join(BASE_DIR, "csv", "subcounty_risk_factors.csv")
@@ -76,7 +75,6 @@ with st.sidebar:
     # --- ENDEMIC HOTSPOT HIGH-BURDEN CORRIDOR REGISTER ---
     st.subheader("⚠️ High-Burden Baselines")
     if risk_factors is not None:
-        # High structural risk subcounties based on notebook metrics
         critical_corridors = risk_factors[risk_factors['Risk_Score'] >= 9]['Sub_County'].unique()
         if len(critical_corridors) > 0:
             st.caption(f"Tracking {len(critical_corridors)} high-priority structural corridors:")
@@ -105,7 +103,6 @@ if page == "National Surveillance Summary":
     metric_1, metric_2, metric_3, metric_4 = st.columns(4)
     
     if df is not None:
-        # Evaluate the newest chronological prediction matrix row
         latest_date = df['Date'].max()
         current_slice = df[df['Date'] == latest_date]
         
@@ -122,7 +119,6 @@ if page == "National Surveillance Summary":
         # --- TIME-SERIES REGIONAL METEOROLOGICAL ANOMALY TRENDS ---
         st.markdown("### 📈 Chronological Environmental Profile (Aggregated National Trajectory)")
         
-        # Using exact notebook engineered rolling columns
         aggregated_trends = df.groupby('Date')[['rainfall_14d_sum', 'temp_14d_avg']].mean().reset_index()
         
         climatological_chart = alt.Chart(aggregated_trends).mark_line(color='#008080', strokeWidth=2.5).encode(
@@ -139,9 +135,7 @@ if page == "National Surveillance Summary":
 elif page == "Geospatial Risk Matrix":
     if df is not None and os.path.exists(geo_path):
         
-        # Target the latest dynamic updates across the active districts
         freshest_matrix_slice = df.sort_values('Date').groupby('Sub_County').tail(1)
-        
         layout_left_canvas, layout_right_canvas = st.columns([2, 1])
 
         with layout_left_canvas:
@@ -158,13 +152,12 @@ elif page == "Geospatial Risk Matrix":
                 if not district_record_match.empty:
                     notebook_score = district_record_match.iloc[0]['AI_Risk_Score']
                     
-                    # Applying exact categorical cutoff limits defined in notebook source function
                     if notebook_score >= 7.0: 
-                        fill_hex_color = "#c0392b"     # Emergency Threshold Infiltration (🔴 High)
+                        fill_hex_color = "#c0392b"     
                     elif notebook_score >= 3.5: 
-                        fill_hex_color = "#f39c12"   # Caution Threshold Profile (🟡 Medium)
+                        fill_hex_color = "#f39c12"   
                     else: 
-                        fill_hex_color = "#27ae60"                            # Homogeneous Baseline Equilibrium (🟢 Low)
+                        fill_hex_color = "#27ae60"                            
                     boundary_alpha = 0.75
                 else:
                     fill_hex_color = "#bdc3c7"
@@ -188,7 +181,6 @@ elif page == "Geospatial Risk Matrix":
             notebook_score = sentinel_node_data['AI_Risk_Score']
             notebook_level = sentinel_node_data['AI_Risk_Level']
             
-            # --- INSTITUTIONAL ALERT SYSTEM STRATIFICATION ---
             if notebook_score >= 7.0:
                 st.error(f"🚨 ALERT TIER 1: EMERGENCY RISK BREACH")
                 tier_nomenclature = "CRITICAL PATHOGEN TRANSMISSION IMMINENCE"
@@ -199,16 +191,12 @@ elif page == "Geospatial Risk Matrix":
                 st.success(f"✅ ALERT TIER 3: STABLE BASELINE")
                 tier_nomenclature = "STABLE ECO-CLIMATOLOGICAL REGISTER"
             
-            # --- PREVENTIVE PROACTIVE RESOURCE ALLOCATION MODEL ---
             st.markdown("#### 📦 Proactive Resource Allocation Requirements")
-            
-            # Extract historical structural vulnerability metrics 
             structural_vulnerability = float(sentinel_node_data['Risk_Score']) if 'Risk_Score' in sentinel_node_data else 7.0
             
             probability_ratio = notebook_score / 10.0
             catchment_vulnerability_proxy = structural_vulnerability * 4500
             
-            # Resource demand calculations matching standard epidemiologic logistics formulas
             calculated_chlorine_metric = round((catchment_vulnerability_proxy * probability_ratio * 0.04), 1)
             calculated_ors_volume = int(catchment_vulnerability_proxy * probability_ratio * 0.6)
             
@@ -216,7 +204,6 @@ elif page == "Geospatial Risk Matrix":
             allocated_col_1.metric("Water Purification Cargo (HTH 70%)", f"{calculated_chlorine_metric} kg")
             allocated_col_2.metric("Oral Rehydration Kits", f"{calculated_ors_volume} Units")
             
-            # --- ANTECEDENT MICRO-CLIMATE PRECIPITATION PROFILE (LAST 45 DAYS) ---
             st.markdown("#### 🌧️ Local Antecedent Precipitation Trend")
             local_history = df[df['Sub_County'] == selected_sentinel_node].sort_values('Date').tail(45)
             if not local_history.empty:
@@ -226,7 +213,6 @@ elif page == "Geospatial Risk Matrix":
             
             st.divider()
             
-            # --- OFFICIAL CONTAINMENT OPERATION DIRECTIVE ---
             official_directive_payload = f"""========================================================================
 MINISTRY OF HEALTH & WORLD HEALTH ORGANIZATION SURVEILLANCE DIRECTIVE
 ========================================================================
@@ -260,7 +246,6 @@ MANDATED RAPID RESPONSE TIMELINE:
 elif page == "Methodological Validation & XAI":
     st.subheader("⚙️ Algorithmic Integrity & Global Feature Attribution Verification")
     
-    # Render out tournament rankings directly from data directory
     if os.path.exists(comparison_path):
         st.write("#### 🏆 Out-of-Sample Machine Learning Tournament Metrics")
         st.dataframe(pd.read_csv(comparison_path), use_container_width=True)
@@ -276,17 +261,16 @@ elif page == "Methodological Validation & XAI":
         
     st.divider()
     
-    # --- GLOBAL INTERPRETABILITY EXPLAINABLE AI LAYER ---
     st.markdown("#### 🧬 Explainable AI (XAI): Global Environmental Feature Attribution Metrics")
     st.caption("Verifying model operational feature importance logic against established biological incubation dynamics.")
     
-    # Dynamically displaying the feature importance structure mapped out in your XGBoost notebook code
     institutional_xai_vectors = pd.DataFrame({
         'Environmental Driver Proxies': ['humidity_lag_14 (Boundary Layer Moisture)', 'rainfall_14d_sum (Precipitation Volume)', 'Risk_Score (Structural WASH Fragility)', 'temp_14d_avg (Thermal Incubation Index)', 'rainfall_lag_14 (Antecedent Moisture Lag)', 'temp_lag_14 (Antecedent Thermal Lag)'],
         'Global Predictive Influence (Feature Weights)': [0.38, 0.29, 0.16, 0.09, 0.05, 0.03]
     })
     
-    xai_visualization_node = alt.Chart(institutional_xai_vectors).mark_bar(color='#008080', borderRadius=4).encode(
+    # Corrected attribute mapping convention from camelCase to system snake_case format
+    xai_visualization_node = alt.Chart(institutional_xai_vectors).mark_bar(color='#008080', corner_radius=4).encode(
         x=alt.X('Global Predictive Influence (Feature Weights):Q', title='Predictive Influence (Feature Weight)'),
         y=alt.Y('Environmental Driver Proxies:N', sort='-x', title='Surveillance Input Matrix Parameters'),
         tooltip=['Environmental Driver Proxies', 'Global Predictive Influence (Feature Weights)']
