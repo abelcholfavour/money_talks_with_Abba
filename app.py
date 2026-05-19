@@ -6,14 +6,13 @@ import os
 import json
 import altair as alt
 
-# --- 1. INSTITUTIONAL PLATFORM CONFIGURATION ---
+
 st.set_page_config(
     page_title="K-CEWS | Epidemiological Intelligence Platform", 
     page_icon="🇰🇪",
     layout="wide"
 )
 
-# --- INJECTION OF CLINICAL INTERFACE STYLE OVERRIDES ---
 st.markdown("""
     <style>
         .main { background-color: #fcfcfc; }
@@ -33,15 +32,14 @@ st.markdown("""
     </style>
     """, unsafe_allow_html=True)
 
-# --- 2. SURVEILLANCE DATA REGISTRY PATHS ---
+# SURVEILLANCE DATA REGISTRY PATHS
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
-# Directly tracking the file paths specified in your notebook pipeline
 csv_path = os.path.join(BASE_DIR, "csv", "kcews_live_predictions.csv")
 geo_path = os.path.join(BASE_DIR, "csv", "ken_admin2.geojson")
 factors_path = os.path.join(BASE_DIR, "csv", "subcounty_risk_factors.csv")
 comparison_path = os.path.join(BASE_DIR, "csv", "model_performance_comparison.csv")
 
-# --- 3. PIPELINE DATA INGESTION ENGINE ---
+
 @st.cache_data
 def load_live_predictions():
     if os.path.exists(csv_path):
@@ -62,15 +60,13 @@ def load_baseline_structural_factors():
 df = load_live_predictions()
 risk_factors = load_baseline_structural_factors()
 
-# --- 4. NAVIGATION CONTROL PANEL & SENTINEL REGISTER ---
+# NAVIGATION CONTROL PANEL & SENTINEL REGISTER
 with st.sidebar:
-    # Check if the unified local image exists, otherwise fall back to a web URL
     local_logo_path = os.path.join(BASE_DIR, "Image", "all3.png")
     
     if os.path.exists(local_logo_path):
         st.image(local_logo_path, use_container_width=True)
     else:
-        # Fallback to a clear placeholder if you haven't uploaded the file yet
         st.image("https://upload.wikimedia.org/wikipedia/commons/c/c2/WHO_logo.png", width=110)
         
     st.title("Navigation Panel")
@@ -81,10 +77,8 @@ with st.sidebar:
     
     st.divider()
     
-    # --- ENDEMIC HOTSPOT HIGH-BURDEN CORRIDOR REGISTER ---
-    st.subheader("High-Burden Baselines")
+    st.subheader("HOTSPOT High-Burden COUNTIES")
     if risk_factors is not None:
-        # High structural risk subcounties based on notebook metrics
         critical_corridors = risk_factors[risk_factors['Risk_Score'] >= 9]['Sub_County'].unique()
         if len(critical_corridors) > 0:
             st.caption(f"Tracking {len(critical_corridors)} high-priority structural corridors:")
@@ -95,38 +89,32 @@ with st.sidebar:
     
     st.divider()
     if df is not None:
-        st.success(f"✅ Live Prediction Core Online")
+        st.success(f"Live Prediction Core Online")
         st.caption(f"Synchronized Records: {len(df):,}")
     else:
-        st.error("❌ Prediction Core Offline")
+        st.error("Prediction Core Offline")
         
     st.info("**Surveillance Tuning Note:** Operational classification thresholds are calibrated precisely to your notebook pipeline settings (Caution: 3.5, Emergency: 7.0).")
 
-# --- 5. ENTERPRISE SURVEILLANCE DASHBOARD CANVAS ---
-st.title("🇰🇪 Kenya Cholera Early Warning System (K-CEWS)")
+st.title("Kenya Cholera Early Warning System (K-CEWS)")
 st.caption("Automated Environmental Surveillance, Climatological Risk Prediction & Proactive Decision Support Platform")
 st.divider()
 
-# --- PANEL VIEW 1: NATIONAL SURVEILLANCE SUMMARY ---
-# --- PANEL VIEW 1: NATIONAL SURVEILLANCE SUMMARY ---
+# NATIONAL SURVEILLANCE SUMMARY
 if page == "National Surveillance Summary":
     if df is not None:
-        # Evaluate the newest chronological prediction matrix row in the historical set
         latest_date = df['Date'].max()
         current_slice = df[df['Date'] == latest_date]
         
-        # Format the anchor date cleanly for the executive team
         anchor_date_str = latest_date.strftime('%B %Y') if hasattr(latest_date, 'strftime') else str(latest_date)
         
-        # Contextual Informational Banner explaining the historical data state
         st.info(
             f"💡 **Operational Framework Note:** This system is anchored to a validated historical validation baseline (**{anchor_date_str}**). "
             "The underlying analytics engine demonstrates real-world deployment readiness using historical satellite-derived indicators."
         )
         
-        st.markdown(f"### 📊 National Epidemiological Pulse <small style='color:gray; float:right;'>Reporting Matrix Anchor: {anchor_date_str}</small>", unsafe_allow_html=True)
+        st.markdown(f"### National Epidemiological Pulse <small style='color:gray; float:right;'>Reporting Matrix Anchor: {anchor_date_str}</small>", unsafe_allow_html=True)
         
-        # --- NEW CALIBRATION: CALCULATE DYNAMIC CUTOFFS TO MATCH THE MAP CORRECTION ---
         s_min = current_slice['AI_Risk_Score'].min()
         s_max = current_slice['AI_Risk_Score'].max()
         
@@ -138,12 +126,10 @@ if page == "National Surveillance Summary":
             low_to_med_cutoff = 3.5
             med_to_high_cutoff = 7.0
             
-        # Classify metric nodes dynamically matching the map colors exactly
         active_emergency_nodes = len(current_slice[current_slice['AI_Risk_Score'] >= med_to_high_cutoff])
         active_caution_nodes = len(current_slice[(current_slice['AI_Risk_Score'] >= low_to_med_cutoff) & (current_slice['AI_Risk_Score'] < med_to_high_cutoff)])
         total_subcounties = df['Sub_County'].nunique()
         
-        # --- ENHANCED EXECUTIVE METRIC CARDS ---
         metric_1, metric_2, metric_3, metric_4 = st.columns(4)
         
         with metric_1:
@@ -189,14 +175,11 @@ if page == "National Surveillance Summary":
             
         st.markdown("<br><hr>", unsafe_allow_html=True)
         
-        # --- CHRONOLOGICAL ENVIRONMENTAL TRAJECTORY (MULTILINE GRAPH) ---
-        st.markdown("### 📈 Chronological Environmental Profile")
+        st.markdown("### Chronological Environmental Profile")
         st.caption("Aggregated national climatic anomalies tracking the correlation between moisture influx and temperature triggers over time.")
         
-        # Preparing aggregated environmental timeline metrics
         aggregated_trends = df.groupby('Date')[['rainfall_14d_sum', 'temp_14d_avg']].mean().reset_index()
         
-        # Melt dataframe to make it easy for Altair to chart multiple color-coded lines beautifully
         melted_trends = aggregated_trends.melt(
             id_vars=['Date'], 
             value_vars=['rainfall_14d_sum', 'temp_14d_avg'],
@@ -204,13 +187,11 @@ if page == "National Surveillance Summary":
             value_name='Value'
         )
         
-        # Mapping clean professional names for the chart legend
         melted_trends['Climatic Parameter'] = melted_trends['Climatic Parameter'].map({
             'rainfall_14d_sum': 'Mean Rainfall Volume (mm)',
             'temp_14d_avg': 'Mean Temperature Baseline (°C)'
         })
         
-        # Beautiful Altair Chart with Selection Tooltips and Clear Encoding
         climatological_chart = alt.Chart(melted_trends).mark_line(strokeWidth=3, interpolate='monotone').encode(
             x=alt.X('Date:T', title='Historical Evaluation Timeline Horizon'),
             y=alt.Y('Value:Q', title='Aggregated Environmental Sensor Metric Value'),
@@ -226,7 +207,6 @@ if page == "National Surveillance Summary":
         
         st.markdown("<br>", unsafe_allow_html=True)
         
-        # --- ECO-CLIMATOLOGICAL ANALYSIS BREAKDOWN ---
         st.markdown("<p style='font-weight: bold; font-size: 18px; color: #2c3e50; margin-bottom: 5px;'>🌧️ Eco-Climatological Dynamics & Pathogen Drivers</p>", unsafe_allow_html=True)
         st.markdown(
             "This timeline tracks the dual-axis environmental stressors that dictate cholera survival and distribution patterns across Kenya. "
@@ -240,25 +220,22 @@ if page == "National Surveillance Summary":
         )
         
     else:
-        st.warning("⚠️ Awaiting prediction pipeline generation data. Verify that `csv/kcews_live_predictions.csv` has been exported by your machine learning notebook.")
-# --- PANEL VIEW 2: GEOSPATIAL RISK MATRIX ---
+        st.warning("Awaiting prediction pipeline generation data. Verify that `csv/kcews_live_predictions.csv` has been exported by your machine learning notebook.")
+
+# GEOSPATIAL RISK MATRIX 
 elif page == "Geospatial Risk Matrix":
     if df is not None and os.path.exists(geo_path):
-        
-        # Target the latest dynamic updates across the active districts
+
         freshest_matrix_slice = df.sort_values('Date').groupby('Sub_County').tail(1)
         
-        # --- PRE-CALCULATE RELATIVE OPERATIONAL THRESHOLDS TO ELIMINATE ALARM FATIGUE ---
         s_min = freshest_matrix_slice['AI_Risk_Score'].min()
         s_max = freshest_matrix_slice['AI_Risk_Score'].max()
         
-        # If there is variation in the scores, divide the range into 3 equal operational intervals
         if s_max > s_min:
             interval = (s_max - s_min) / 3.0
             low_to_med_cutoff = s_min + interval
             med_to_high_cutoff = s_min + (2.0 * interval)
         else:
-            # Fallback to defaults if all scores happen to be identical
             low_to_med_cutoff = 3.5
             med_to_high_cutoff = 7.0
             
@@ -278,13 +255,12 @@ elif page == "Geospatial Risk Matrix":
                 if not district_record_match.empty:
                     notebook_score = district_record_match.iloc[0]['AI_Risk_Score']
                     
-                    # Applying dynamic operational cutoff limits to introduce beautiful color variation
                     if notebook_score >= med_to_high_cutoff: 
-                        fill_hex_color = "#c0392b"     # Emergency Threshold Infiltration (🔴 High Risk)
+                        fill_hex_color = "#c0392b"    
                     elif notebook_score >= low_to_med_cutoff: 
-                        fill_hex_color = "#f39c12"     # Caution Threshold Profile (🟡 Medium Risk)
+                        fill_hex_color = "#f39c12"    
                     else: 
-                        fill_hex_color = "#27ae60"     # Controlled Baseline Equilibrium (🟢 Low Risk)
+                        fill_hex_color = "#27ae60"    
                     boundary_alpha = 0.75
                 else:
                     fill_hex_color = "#bdc3c7"
@@ -308,7 +284,6 @@ elif page == "Geospatial Risk Matrix":
             notebook_score = sentinel_node_data['AI_Risk_Score']
             notebook_level = sentinel_node_data['AI_Risk_Level']
             
-            # --- INSTITUTIONAL ALERT SYSTEM STRATIFICATION MAPPED DYNAMICALLY ---
             if notebook_score >= med_to_high_cutoff:
                 st.error(f"🚨 ALERT TIER 1: EMERGENCY RISK BREACH")
                 tier_nomenclature = "CRITICAL PATHOGEN TRANSMISSION IMMINENCE"
@@ -319,16 +294,14 @@ elif page == "Geospatial Risk Matrix":
                 st.success(f"✅ ALERT TIER 3: STABLE BASELINE")
                 tier_nomenclature = "STABLE ECO-CLIMATOLOGICAL REGISTER"
             
-            # --- PREVENTIVE PROACTIVE RESOURCE ALLOCATION MODEL ---
-            st.markdown("#### 📦 Proactive Resource Allocation Requirements")
-            
-            # Extract historical structural vulnerability metrics 
+
+            st.markdown("#### Proactive Resource Allocation Requirements")
+      
             structural_vulnerability = float(sentinel_node_data['Risk_Score']) if 'Risk_Score' in sentinel_node_data else 7.0
             
             probability_ratio = notebook_score / 10.0
             catchment_vulnerability_proxy = structural_vulnerability * 4500
-            
-            # Resource demand calculations matching standard epidemiologic logistics formulas
+           
             calculated_chlorine_metric = round((catchment_vulnerability_proxy * probability_ratio * 0.04), 1)
             calculated_ors_volume = int(catchment_vulnerability_proxy * probability_ratio * 0.6)
             
@@ -336,7 +309,6 @@ elif page == "Geospatial Risk Matrix":
             allocated_col_1.metric("Water Purification Cargo (HTH 70%)", f"{calculated_chlorine_metric} kg")
             allocated_col_2.metric("Oral Rehydration Kits", f"{calculated_ors_volume} Units")
             
-            # --- ANTECEDENT MICRO-CLIMATE PRECIPITATION PROFILE (LAST 45 DAYS) ---
             st.markdown("#### 🌧️ Local Antecedent Precipitation Trend")
             local_history = df[df['Sub_County'] == selected_sentinel_node].sort_values('Date').tail(45)
             if not local_history.empty:
@@ -346,7 +318,6 @@ elif page == "Geospatial Risk Matrix":
             
             st.divider()
             
-            # --- OFFICIAL CONTAINMENT OPERATION DIRECTIVE ---
             official_directive_payload = f"""========================================================================
 MINISTRY OF HEALTH & WORLD HEALTH ORGANIZATION SURVEILLANCE DIRECTIVE
 ========================================================================
@@ -364,7 +335,7 @@ MUNICIPAL PRE-POSITIONING LOGISTICS DIRECTIVE:
 2. Mobilize {calculated_ors_volume} low-osmolarity Oral Rehydration Salts (ORS) commodity cases to local level primary care facilities.
 
 MANDATED RAPID RESPONSE TIMELINE:
-{"👉 DISPATCH DIRECTIVE: Deploy Sub-County Rapid Response Teams (RRT) inside a 24-hour window to secure and sanitize public open-source hydration points." if notebook_score >= low_to_med_cutoff else "👉 MONITORING DIRECTIVE: Maintain continuous remote sensing surveillance check. Re-evaluate at next daily dataset update synchronization."}
+{"DISPATCH DIRECTIVE: Deploy Sub-County Rapid Response Teams (RRT) inside a 24-hour window to secure and sanitize public open-source hydration points." if notebook_score >= low_to_med_cutoff else "👉 MONITORING DIRECTIVE: Maintain continuous remote sensing surveillance check. Re-evaluate at next daily dataset update synchronization."}
 ========================================================================="""
             
             st.download_button(
@@ -374,7 +345,6 @@ MANDATED RAPID RESPONSE TIMELINE:
                 use_container_width=True
             )
 
-        # --- STEP 4: STRATEGIC EXPLANATION AT THE BOTTOM OF THE PANEL ---
         st.markdown("<br><hr>", unsafe_allow_html=True)
         st.markdown("<p style='font-weight: bold; font-size: 20px; color: #2c3e50; margin-bottom: 5px;'>🗺️ Geospatial Stratification & Strategic Interpretation Guide</p>", unsafe_allow_html=True)
         st.markdown(
@@ -393,13 +363,13 @@ MANDATED RAPID RESPONSE TIMELINE:
             "Health officers can download and transmit this directive to Sub-County Rapid Response Teams (RRTs) within hours of a satellite climate warning, allowing field teams to treat community water systems before localized pathogen incubation peaks."
         )
     else:
-        st.warning("⚠️ Verify geospatial definitions path configurations: `csv/ken_admin2.geojson` must exist to render boundary matrix projections.")
-# --- PANEL VIEW 3: METHODOLOGICAL VALIDATION & XAI ---
+        st.warning("Verify geospatial definitions path configurations: `csv/ken_admin2.geojson` must exist to render boundary matrix projections.")
+
+# METHODOLOGICAL VALIDATION & XAI 
 elif page == "Methodological Validation & XAI":
     st.markdown("### ⚙️ Algorithmic Integrity & Global Feature Attribution Verification")
     st.caption("Verifying machine learning operational feature importance weights against established biological and hydrological dynamics.")
     
-    # Explanatory context for public health officials who aren't data scientists
     st.info(
         "💡 **Operational Insights:** This panel reveals the exact environmental factors that drive the system's risk scores. "
         "By looking at these weights, the Ministry of Health and WHO can see exactly which parameters our AI relies on to generate the 14-day early warning window."
@@ -407,10 +377,8 @@ elif page == "Methodological Validation & XAI":
     
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- STEP 1: GLOBAL INTERPRETABILITY EXPLAINABLE AI LAYER (NOW TOP CHOSEN VERTICAL ELEMENT) ---
     st.markdown("#### 🧬 Explainable AI (XAI): Global Environmental Feature Attribution Metrics")
-    
-    # Dynamically displaying the feature importance structure mapped out in your XGBoost notebook code
+
     institutional_xai_vectors = pd.DataFrame({
         'Environmental Driver Proxies': [
             'humidity_lag_14 (Boundary Layer Moisture)', 
@@ -423,7 +391,6 @@ elif page == "Methodological Validation & XAI":
         'Global Predictive Influence (Feature Weights)': [0.38, 0.29, 0.16, 0.09, 0.05, 0.03]
     })
     
-    # Polished, full-width customized Altair Chart
     xai_visualization_node = alt.Chart(institutional_xai_vectors).mark_bar(color='#008080').encode(
         x=alt.X('Global Predictive Influence (Feature Weights):Q', title='Predictive Influence Weight (0.0 - 1.0)'),
         y=alt.Y('Environmental Driver Proxies:N', sort='-x', title=None),
@@ -437,7 +404,6 @@ elif page == "Methodological Validation & XAI":
 
     st.markdown("<br>", unsafe_allow_html=True)
 
-    # --- STEP 2: CLINICAL / BIOLOGICAL ALIGNMENT PARAGRAPH (PLACED DIRECTLY BELOW CHART) ---
     st.markdown("<p style='font-weight: bold; font-size: 18px; color: #2c3e50; margin-bottom: 5px;'>🔬 Clinical Alignment Review</p>", unsafe_allow_html=True)
     st.markdown(
         "The model weights perfectly map to the **14-day incubation cycle** of *Vibrio cholerae*:\n\n"
@@ -450,7 +416,7 @@ elif page == "Methodological Validation & XAI":
 
     st.markdown("<br><hr>", unsafe_allow_html=True)
     
-    # --- STEP 3: MODEL TOURNAMENT SECTION (PUSHED SECURELY TO THE BOTTOM) ---
+
     if os.path.exists(comparison_path):
         st.markdown("#### 🏆 Out-of-Sample Machine Learning Tournament Metrics")
         st.caption("Active cross-validation scoring of the champion model vs. structural alternatives across temporal holdout groups.")
@@ -458,8 +424,7 @@ elif page == "Methodological Validation & XAI":
     else:
         st.markdown("#### 🏆 Validated Engine Framework Architecture Benchmarks")
         st.caption("Historical cross-validation tournament scores evaluating predictive performance metrics across different modeling styles.")
-        
-        # We transform the static data into a highly readable, stylized data frame rather than a raw markdown table
+
         institutional_evaluation_matrix = pd.DataFrame({
             'Forecasting Framework': ['Champion: Optimized Gradient Boosted Trees (XGBoost)', 'Ensembled Random Forest Baseline', 'Parametric Decision Tree Schema', 'Stochastic Logistic Regression Engine'],
             'Sensitivity / Recall (Catch Rate)': ['90.5% 🎯', '63.4%', '59.1%', '52.3%'],
