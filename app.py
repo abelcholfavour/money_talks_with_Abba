@@ -131,7 +131,7 @@ if page == "National Surveillance Summary":
             tooltip=['Date', 'rainfall_14d_sum', 'temp_14d_avg']
         ).properties(height=350).interactive()
         
-        st.altair_chart(climatological_chart, use_container_width="stretch")
+        st.altair_chart(climatological_chart, use_container_width=True)
     else:
         st.warning("Awaiting prediction pipeline generation data. Verify that `csv/kcews_live_predictions.csv` has been exported by the notebook.")
 
@@ -250,7 +250,8 @@ MANDATED RAPID RESPONSE TIMELINE:
             st.download_button(
                 label="📥 Export Institutional Response Directive",
                 data=official_directive_payload,
-                file_name=f"KCEWS_DIRECTIVE_{selected_sentinel_node}.txt"
+                file_name=f"KCEWS_DIRECTIVE_{selected_sentinel_node}.txt",
+                use_container_width=True
             )
     else:
         st.warning("Verify geospatial definitions path configurations: `/csv/ken_admin2.geojson` must exist to render boundary matrix projections.")
@@ -291,4 +292,4 @@ elif page == "Methodological Validation & XAI":
         tooltip=['Environmental Driver Proxies', 'Global Predictive Influence (Feature Weights)']
     ).properties(height=280)
     
-    st.altair_chart(xai_visualization_node, use_container_width="stretch")
+    st.altair_chart(xai_visualization_node, use_container_width=True)
