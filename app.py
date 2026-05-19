@@ -286,7 +286,7 @@ elif page == "Methodological Validation & XAI":
         'Global Predictive Influence (Feature Weights)': [0.38, 0.29, 0.16, 0.09, 0.05, 0.03]
     })
     
-    xai_visualization_node = alt.Chart(institutional_xai_vectors).mark_bar(color='#008080', borderRadius=4).encode(
+    xai_visualization_node = alt.Chart(institutional_xai_vectors).mark_bar(color='#008080', corner_radius=4).encode(
         x=alt.X('Global Predictive Influence (Feature Weights):Q', title='Predictive Influence (Feature Weight)'),
         y=alt.Y('Environmental Driver Proxies:N', sort='-x', title='Surveillance Input Matrix Parameters'),
         tooltip=['Environmental Driver Proxies', 'Global Predictive Influence (Feature Weights)']
