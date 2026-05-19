@@ -81,7 +81,7 @@ with st.sidebar:
         if len(critical_corridors) > 0:
             st.caption(f"Tracking {len(critical_corridors)} high-priority structural corridors:")
             for sub_area in sorted(critical_corridors):
-                st.write(f"- 🔴 {sub_area}")
+                st.write(f"🔴 {sub_area}")
     else:
         st.info("Baseline structural tracking initialized.")
     
@@ -131,7 +131,7 @@ if page == "National Surveillance Summary":
             tooltip=['Date', 'rainfall_14d_sum', 'temp_14d_avg']
         ).properties(height=350).interactive()
         
-        st.altair_chart(climatological_chart, use_container_width=True)
+        st.altair_chart(climatological_chart, use_container_width="stretch")
     else:
         st.warning("Awaiting prediction pipeline generation data. Verify that `csv/kcews_live_predictions.csv` has been exported by the notebook.")
 
@@ -250,8 +250,7 @@ MANDATED RAPID RESPONSE TIMELINE:
             st.download_button(
                 label="📥 Export Institutional Response Directive",
                 data=official_directive_payload,
-                file_name=f"KCEWS_DIRECTIVE_{selected_sentinel_node}.txt",
-                use_container_width=True
+                file_name=f"KCEWS_DIRECTIVE_{selected_sentinel_node}.txt"
             )
     else:
         st.warning("Verify geospatial definitions path configurations: `/csv/ken_admin2.geojson` must exist to render boundary matrix projections.")
@@ -286,10 +285,10 @@ elif page == "Methodological Validation & XAI":
         'Global Predictive Influence (Feature Weights)': [0.38, 0.29, 0.16, 0.09, 0.05, 0.03]
     })
     
-    xai_visualization_node = alt.Chart(institutional_xai_vectors).mark_bar(color='#008080', corner_radius=4).encode(
+    xai_visualization_node = alt.Chart(institutional_xai_vectors).mark_bar(color='#008080').encode(
         x=alt.X('Global Predictive Influence (Feature Weights):Q', title='Predictive Influence (Feature Weight)'),
         y=alt.Y('Environmental Driver Proxies:N', sort='-x', title='Surveillance Input Matrix Parameters'),
         tooltip=['Environmental Driver Proxies', 'Global Predictive Influence (Feature Weights)']
     ).properties(height=280)
     
-    st.altair_chart(xai_visualization_node, use_container_width=True)
+    st.altair_chart(xai_visualization_node, use_container_width="stretch")
